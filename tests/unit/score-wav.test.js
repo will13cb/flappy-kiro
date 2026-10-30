@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const require = createRequire(import.meta.url);
-const { buildScoreWav, SAMPLE_RATE, DURATION_S } = require('../../scripts/generate-score-wav.js');
+import { buildScoreWav, SAMPLE_RATE, DURATION_S } from '../../scripts/generate-score-wav.js';
 
-const ROOT = path.resolve(__dirname, '..', '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ASSETS = path.join(ROOT, 'assets');
 
 /** Reads fmt and data info from a WAV buffer by walking its chunks. */
@@ -97,23 +96,15 @@ describe('assets/score.wav', () => {
   });
 });
 
-describe('existing sound durations (informational)', () => {
-  const targets = { 'jump.wav': 0.1, 'game_over.wav': 0.3 };
-  for (const [name, target] of Object.entries(targets)) {
-    it(`reports the duration of ${name}`, () => {
-      const file = path.join(ASSETS, name);
-      if (!fs.existsSync(file)) {
-        console.info(`[info] ${name}: missing (target ${target} s)`);
-        return;
-      }
-      try {
-        const buf = fs.readFileSync(file);
-        const { fmt, dataSize } = parseWav(buf);
-        const seconds = dataSize / fmt.blockAlign / fmt.sampleRate;
-        console.info(`[info] ${name}: ${seconds.toFixed(3)} s (target ${target} s)`);
-      } catch (err) {
-        console.info(`[info] ${name}: could not read duration (${err.message})`);
-      }
+describe('existing sounds are valid and short', () => {
+  // jump.wav and game_over.wav are provided recordings (game_over is a spoken "game over"),
+  // so they are not trimmed to the audio-assets.md targets; only sanity-check them.
+  for (const name of ['jump.wav', 'game_over.wav']) {
+    it(`${name} is a readable WAV under 3 s`, () => {
+      const { fmt, dataSize } = parseWav(fs.readFileSync(path.join(ASSETS, name)));
+      const seconds = dataSize / fmt.blockAlign / fmt.sampleRate;
+      expect(seconds).toBeGreaterThan(0);
+      expect(seconds).toBeLessThan(3);
     });
   }
 });

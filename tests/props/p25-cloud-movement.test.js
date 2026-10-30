@@ -2,11 +2,9 @@
 // **Validates: Requirements 13.6, 13.7, 13.11**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig, arbDt, rng } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { createClouds, moveClouds } = require('../../src/clouds.js');
+import { createClouds, moveClouds } from '../../src/clouds.js';
 
 // A config, a dt, and clouds whose x is spread from well off the left edge to off the right edge.
 const arbCase = arbAnyConfig.chain((cfg) =>

@@ -2,11 +2,9 @@
 // **Validates: Requirements 18.1**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { idleFrame } = require('../../src/animation.js');
+import { idleFrame } from '../../src/animation.js';
 
 // Independent implementation: walk the cumulative durations at clock mod total.
 function expectedIndex(frames, total, clock) {

@@ -2,12 +2,10 @@
 // **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 15.7**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { DEFAULT_CONFIG as cfg, rng } from '../helpers/arbitraries.js';
 import { buildState, arbPointerInput } from '../helpers/game-arbs.js';
 
-const require = createRequire(import.meta.url);
-const { update, handleInput } = require('../../src/game.js');
+import { update, handleInput } from '../../src/game.js';
 
 const LOCKOUT = cfg.timing.LOCKOUT_MS;
 const MAX_DT = cfg.timing.MAX_FRAME_MS; // ms

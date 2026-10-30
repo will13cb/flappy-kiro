@@ -2,11 +2,9 @@
 // **Validates: Requirements 4.2**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig, arbPipes, rng } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { shouldSpawn, spawnPair } = require('../../src/pipes.js');
+import { shouldSpawn, spawnPair } from '../../src/pipes.js';
 
 const arbCase = arbConfig.chain((cfg) =>
   fc.record({

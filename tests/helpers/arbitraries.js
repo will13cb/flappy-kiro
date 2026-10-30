@@ -1,9 +1,7 @@
 // Shared fast-check generators and fakes for Flappy Kiro tests.
 import fc from 'fast-check';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { buildConfig, validateConfig, TUNABLE, DEFAULT_CONFIG } = require('../../src/config.js');
+import { buildConfig, validateConfig, TUNABLE, DEFAULT_CONFIG } from '../../src/config.js';
 
 export { DEFAULT_CONFIG };
 

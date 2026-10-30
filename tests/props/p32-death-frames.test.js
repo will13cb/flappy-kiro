@@ -2,11 +2,9 @@
 // **Validates: Requirements 7.2, 7.14, 18.5**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { deathFrame } = require('../../src/animation.js');
+import { deathFrame } from '../../src/animation.js';
 
 const DEG = Math.PI / 180;
 const arbElapsed = fc.double({ min: -100, max: 5000, noNaN: true, noDefaultInfinity: true });

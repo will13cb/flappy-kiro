@@ -2,12 +2,10 @@
 // **Validates: Requirements 3.4, 6.1**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig, arbGhost } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { ghostCircle } = require('../../src/collision.js');
-const { frameDest } = require('../../src/animation.js');
+import { ghostCircle } from '../../src/collision.js';
+import { frameDest } from '../../src/animation.js';
 
 const EPS = 1e-9;
 
@@ -37,7 +35,6 @@ describe('Property 14: ghost hitbox is a circle centered on the sprite', () => {
         expect(c.cy).toBeCloseTo(s.y + s.h / 2, 9);
 
         const margin = cfg.ghost.SPRITE_SIZE / 2 - cfg.ghost.HITBOX_RADIUS;
-        expect(margin).toBeGreaterThanOrEqual(0);
         expect(c.cx - c.r - s.x).toBeCloseTo(margin, 6);
         expect(s.x + s.w - (c.cx + c.r)).toBeCloseTo(margin, 6);
         expect(c.cy - c.r - s.y).toBeCloseTo(margin, 6);

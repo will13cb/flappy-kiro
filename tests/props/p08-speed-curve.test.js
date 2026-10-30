@@ -2,11 +2,9 @@
 // **Validates: Requirements 4.10**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig, arbScore } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { speedForScore } = require('../../src/pipes.js');
+import { speedForScore } from '../../src/pipes.js';
 
 describe('Property 8: scroll speed curve', () => {
   it('equals min(MAX_SPEED, INITIAL_SPEED + SPEED_INCREMENT * floor(score / SPEED_STEP_INTERVAL))', () => {

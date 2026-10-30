@@ -2,11 +2,9 @@
 // **Validates: Requirements 17.1, 17.8, 17.9, 17.10**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { buttonsFor, buttonRect, iconRect, iconsVisible, hitTest } = require('../../src/menu.js');
+import { buttonsFor, buttonRect, iconRect, iconsVisible, hitTest } from '../../src/menu.js';
 
 const MODES = ['Main_Menu', 'Playing', 'Paused', 'Game_Over'];
 const arbMode = fc.constantFrom(...MODES);

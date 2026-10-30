@@ -3,10 +3,8 @@
 // Audio-module part only: toggling mute from game.js/main.js is not covered here.
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { createAudioPlayer, SOUND_NAMES } = require('../../src/audio.js');
+import { createAudioPlayer, SOUND_NAMES } from '../../src/audio.js';
 
 // Fake element: records the currentTime seen at each play() call.
 // mode: 'ok' | 'reject' | 'throw'

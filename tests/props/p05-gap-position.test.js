@@ -2,11 +2,9 @@
 // **Validates: Requirements 4.5, 4.6**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig, rng } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { chooseGapCenter, spawnPair } = require('../../src/pipes.js');
+import { chooseGapCenter, spawnPair } from '../../src/pipes.js';
 
 const EPS = 1e-9;
 

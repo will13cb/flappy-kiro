@@ -2,12 +2,10 @@
 // **Validates: Requirements 7.2, 7.4**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { DEFAULT_CONFIG as cfg, arbDt, rng } from '../helpers/arbitraries.js';
 import { buildState } from '../helpers/game-arbs.js';
 
-const require = createRequire(import.meta.url);
-const { update } = require('../../src/game.js');
+import { update } from '../../src/game.js';
 
 const floorY = cfg.world.GROUND_TOP - cfg.ghost.HITBOX_RADIUS;
 const arbDts = fc.array(arbDt(cfg), { minLength: 1, maxLength: 60 });

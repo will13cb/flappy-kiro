@@ -2,15 +2,12 @@
 // **Validates: Requirements 4.5, 6.1, 6.3, 13.5, 17.1**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { buildConfig } = require('../../src/config.js');
+import { buildConfig, TUNABLE } from '../../src/config.js';
 
 function overridesOf(cfg) {
   // Rebuild overrides from a generated config (tunable keys only are honoured).
-  const { TUNABLE } = require('../../src/config.js');
   const o = {};
   Object.values(TUNABLE).forEach(([g, k]) => {
     (o[g] = o[g] || {})[k] = cfg[g][k];

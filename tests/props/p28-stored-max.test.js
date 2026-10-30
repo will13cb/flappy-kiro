@@ -3,11 +3,9 @@
 // Only the scoreStore part is tested here; the game.js Game_Over wiring is not covered.
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbScore, createFakeStorage, createThrowingStorage } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { HIGH_SCORE_KEY, load, recordIfHigher } = require('../../src/scoreStore.js');
+import { HIGH_SCORE_KEY, load, recordIfHigher } from '../../src/scoreStore.js';
 
 describe('Property 28: stored high score is the maximum', () => {
   it('leaves the stored value equal to max(score, stored)', () => {

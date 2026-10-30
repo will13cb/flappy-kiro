@@ -4,7 +4,7 @@
 
 Flappy Kiro is a static, browser-based endless scroller built with an HTML canvas and vanilla JavaScript. There is no server-side component, no build step and no runtime dependency. The player steers Ghosty through gaps in an endless series of Pipe_Pairs. The game has four Game_States (Main_Menu, Playing, Paused, Game_Over), persists the High_Score in local storage, and uses four assets: `assets/ghosty.png`, `assets/jump.wav`, `assets/score.wav` and `assets/game_over.wav`.
 
-The design follows `requirements.md` and four workspace files: `game-config.json` (tunable values), `ghosty-sprites.md` (sprite, hitbox and animation frames), `audio-assets.md` (sounds) and `ui-mockups.md` (menus, HUD and layout). Compared with the previous revision, the Ghost hitbox is now a circle, the tunables come from `game-config.json`, Ghosty has idle, flap and death animations, scoring plays a sound, and the Main_Menu, Game_Over screen and HUD have buttons and icons. The panel for HIGH SCORES is a sub-state of Main_Menu, so the four Game_States are unchanged.
+The design follows `requirements.md` and three workspace files: `ghosty-sprites.md` (sprite, hitbox and animation frames), `audio-assets.md` (sounds) and `ui-mockups.md` (menus, HUD and layout). Compared with the previous revision, the Ghost hitbox is now a circle, the tunables live in `src/config.js`, Ghosty has idle, flap and death animations, scoring plays a sound, and the Main_Menu, Game_Over screen and HUD have buttons and icons. The panel for HIGH SCORES is a sub-state of Main_Menu, so the four Game_States are unchanged.
 
 ### Research Summary
 
@@ -18,8 +18,8 @@ Key findings that shape the design:
 - **Storage.** `localStorage` access can throw (private mode, disabled storage), so every read and write sits in a try/catch. See [MDN: Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API).
 - **Sprite transforms.** The single `ghosty.png` can produce every animation frame at draw time with `translate`, `rotate` and `scale` on the 2D context around the sprite center, and a white flash with a tinted offscreen copy (`globalCompositeOperation = 'source-atop'`). See [MDN: Transformations](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Transformations) and [MDN: globalCompositeOperation](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation).
 - **Circle against rectangle.** The distance from a circle center to a rectangle is the distance to the nearest point of the rectangle, found by clamping the center to the rectangle bounds. A hit is a distance below the radius. Comparing squared distances avoids a square root.
-- **Loading config from `file://`.** `fetch()` of a local JSON file is blocked on `file://` origins in current browsers, and ES module scripts are blocked too. A classic `<script>` has no such restriction. See [MDN: fetch()](https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch).
-- **Query parameters.** `URLSearchParams` parses `location.search` without a server and works from `file://`. Values arrive as strings, so each override is converted with `Number()` and rejected unless it is finite. See [MDN: URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
+- **Module loading.** ES module scripts are blocked on `file://` origins, so the game must be served over HTTP (for example `npx serve`). The base values are a plain object in `src/config.js`, so no `fetch()` is needed. See [MDN: JavaScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
+- **Query parameters.** `URLSearchParams` parses `location.search` without a server. Values arrive as strings, so each override is converted with `Number()` and rejected unless it is finite. See [MDN: URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
 - **Deep freeze.** `Object.freeze` is shallow, so each config group is frozen separately. See [MDN: Object.freeze()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze).
 - **Pixel font.** A pixel-style font is drawn with a generic fallback (`"Press Start 2P", monospace`). No network font is required, so the game still works offline; the monospace fallback is acceptable.
 
@@ -30,13 +30,13 @@ Content was rephrased for compliance with licensing restrictions.
 | Decision | Rationale |
 |---|---|
 | Split pure game logic from the browser shell | Collision, physics, spawning, scoring, animation frame selection, menu logic, state transitions and score storage become deterministic functions that can be property-tested in Node without a DOM. |
-| Single mutable `GameState` object, updated by `update(state, dt, deps)` and `handleInput(state, input, deps)` | Simple for a small game; one place holds every value the requirements freeze while paused. |
+| Single mutable `GameState` object, updated by `update(state, dt, { rng })` and `handleInput(state, input, { rng })` | Simple for a small game; one place holds every value the requirements freeze while paused. |
 | Injected `rng` and `clock` dependencies | Makes gap generation and timers reproducible in tests. |
-| Y axis grows downward; upward velocity is negative | Matches canvas coordinates and `game-config.json`, where `jumpVelocity` is signed (-300). |
+| Y axis grows downward; upward velocity is negative | Matches canvas coordinates and `src/config.js`, where `jumpVelocity` is signed (-300). |
 | Timers (invincibility, crash, lockout, flap, death) count down or up using the clamped `dt` of Playing/Game_Over updates | Pausing freezes them for free because no update runs, and hidden time is never counted. |
 | `Pipe_Pair.x` is the left edge of the widest element (the 72 wide cap); the 64 wide body is inset by 4 | Gives one unambiguous left edge for spawning and one right edge (`x + 72`) for scoring and removal. |
-| Classic scripts plus a global namespace | Works from `file://` with no server. |
-| **`game-config.json` is the editable source; `src/game-config.js` is a generated classic script that mirrors it, guarded by a parity test** | See "Config source" below. `fetch()` fails on `file://` and would make startup asynchronous; a generated script keeps startup synchronous and offline, and the test makes drift impossible to miss. |
+| Plain ES modules (`"type": "module"`) loaded by one `<script type="module" src="src/main.js">`; no global namespace | Imports make dependencies explicit and Node tests import the same files. The page must be served over HTTP, not opened from `file://`. |
+| **Base values live in one plain object in `src/config.js`** | See "Config source" below. There is no JSON file, generated script or sync step that could drift from the code. |
 | Core functions take the config in use (`cfg`) as an argument instead of reading a global | Tests can run the same logic against the default config and against generated variations. |
 | Validation at startup, with a whitelist for URL overrides | A bad value fails with a clear message (or falls back to defaults for URL overrides) instead of producing an unplayable game. |
 | Circle hitbox with strict nearest-point distance | Matches `ghosty-sprites.md` and Requirement 6: touching is not a hit, and the 4 px margin outside the circle never collides. |
@@ -47,17 +47,9 @@ Content was rephrased for compliance with licensing restrictions.
 
 ### Config source
 
-Three ways to get `game-config.json` into a page opened from `file://` were considered:
+Base values live in one plain object, `BASE`, in `src/config.js`: edit it and reload the page. There is no JSON file, generated script or sync step. URL parameters can override the whitelisted tunables (see "URL overrides").
 
-| Option | Result |
-|---|---|
-| `fetch('game-config.json')` with fallback to built-in defaults | Works over http only. From `file://` it always fails and falls back, so the JSON would be silently ignored in the most common way of opening the game. It also makes startup asynchronous and keeps a second copy of every default in code. |
-| Inline `<script type="application/json">` in `index.html` | Works, but it moves the editable values into the HTML and duplicates the JSON file. |
-| **Generated classic script `src/game-config.js`** | Works everywhere, loads synchronously before `config.js`, and has no second copy of the defaults in code. |
-
-The third option is chosen. `src/game-config.js` contains only the JSON, assigned to `FlappyKiro.GAME_CONFIG` (and to `module.exports` in Node). `scripts/sync-config.js` regenerates it from `game-config.json` (`npm run sync-config`). A test asserts that `GAME_CONFIG` deep-equals the parsed `game-config.json`, so a stale copy fails `npm test`. The editing workflow is: edit `game-config.json`, run `npm run sync-config`, reload the page. `config.js` has no built-in copy of these values; if `GAME_CONFIG` is missing, startup fails with a clear message (see Error Handling).
-
-Values that are not in the JSON are fixed by the requirements and companion documents rather than tuned: button and icon geometry from `ui-mockups.md`, and animation frame tables from `ghosty-sprites.md`. They live in `config.js` as `EXTRA_BASE` and join the same validated, frozen config, so tests read them from the config too.
+Button and icon geometry from `ui-mockups.md` and animation frame tables from `ghosty-sprites.md` are fixed by the requirements and companion documents rather than tuned. They sit in the same object (`ui` and `animation` groups) and join the same validated, frozen config, so tests read them from the config too.
 
 ## Architecture
 
@@ -65,11 +57,6 @@ The game is split into a pure logic core and a thin browser shell. The shell rea
 
 ```mermaid
 flowchart TD
-    subgraph Files["Config sources"]
-        JSON["game-config.json (edited by hand)"]
-        GJS["src/game-config.js (generated, FlappyKiro.GAME_CONFIG)"]
-        JSON -->|"npm run sync-config + parity test"| GJS
-    end
     subgraph Shell["Browser shell (side effects)"]
         Main["main.js: loop, wiring"]
         Input["input.js: key/mouse/touch/visibility, pointer mapping"]
@@ -86,9 +73,8 @@ flowchart TD
         Clouds["clouds.js: parallax clouds"]
         Anim["animation.js: idle, flap, death frames"]
         Menu["menu.js: menu model, layout, hit testing"]
-        Config["config.js: mapJson, derived values, validateConfig, loadConfig"]
+        Config["config.js: base values, derived values, validateConfig, loadConfig"]
     end
-    GJS --> Config
     Input -->|input events| Main
     Main -->|dt, input| Game
     Game --> Physics
@@ -142,19 +128,16 @@ The pointer is hit-tested first. Icons and buttons win over the Jump_Input fallb
 
 ```mermaid
 flowchart TD
-    A["page load: scripts in order game-config.js, config.js, ..., main.js"] --> B{"FlappyKiro.GAME_CONFIG present?"}
-    B -->|no| X["throw Error with clear message, show on page"]
-    B -->|yes| C["mapJson(GAME_CONFIG) -> base values"]
-    C --> D["parseOverrides(location.search)"]
-    D -->|unknown key or non-numeric value| W["console.warn, ignore that entry"]
-    D --> E["buildConfig(overrides): base + EXTRA_BASE + derived, frozen"]
+    A["page load: main.js imports config.js"] --> C["parseOverrides(location.search)"]
+    C -->|unknown key or non-numeric value| W["console.warn, ignore that entry"]
+    C --> E["buildConfig(overrides): BASE + overrides + derived, frozen"]
     W --> E
     E --> F{"validateConfig(cfg)"}
     F -->|valid| G["createGame(cfg, ...)"]
     F -->|invalid overrides| H["console.warn with all errors, use buildConfig({})"]
     H --> I{"validateConfig(defaults)"}
     I -->|valid| G
-    I -->|invalid| X
+    I -->|invalid| X["throw Error with the rule list, show on page"]
 ```
 
 ### Frame Flow
@@ -168,7 +151,7 @@ sequenceDiagram
     participant R as Renderer
     RAF->>Main: timestamp
     Main->>Main: dt = min((timestamp - last)/1000, 0.05)
-    Main->>Game: update(state, dt, deps)
+    Main->>Game: update(state, dt, { rng })
     Game-->>Main: events (scored, gameOver)
     Main->>Main: save High_Score on gameOver
     Main->>A: soundsFor(events)
@@ -180,14 +163,11 @@ sequenceDiagram
 ### File Layout
 
 ```
-index.html            canvas, three audio elements, script tags
-game-config.json      editable tunables (source of truth)
-scripts/sync-config.js  generates src/game-config.js from game-config.json
-src/game-config.js    generated: FlappyKiro.GAME_CONFIG = <the JSON>
-src/config.js         mapJson, EXTRA_BASE, derived values, validateConfig, parseOverrides, loadConfig
+index.html            canvas, three audio elements, one module script tag
+src/config.js         BASE values, derived values, TUNABLE, buildConfig, validateConfig, parseOverrides, loadConfig
 src/physics.js        ghost motion and tilt
 src/pipes.js          pipe spawning, movement, gap selection, speed curve
-src/collision.js      circle hitbox, nearest-point distance, boundaries
+src/collision.js      circle hitbox, nearest-point distance, boundaries; pipe rectangles come from `pipes.pipeRects`
 src/clouds.js         cloud creation, movement and wrap
 src/animation.js      frame tables, idle/flap/death frame selection, frame placement
 src/menu.js           menu model, button and icon layout, hit testing
@@ -202,66 +182,19 @@ assets/               ghosty.png, jump.wav, score.wav, game_over.wav, optional g
 tests/*.test.js       unit and property tests
 ```
 
-`assets/score.wav` does not exist yet. It is created as part of implementation, following `audio-assets.md` (two soft tones a major third apart, about 0.2 s). The existing `jump.wav` (about 0.37 s) and `game_over.wav` (about 2.25 s) are longer than the 0.1 s and 0.3 s targets. The game works with any length, so trimming them is optional and not part of this design's correctness.
+`assets/score.wav` is generated by `scripts/generate-score-wav.js`, following `audio-assets.md` (two soft tones a major third apart, about 0.2 s). `jump.wav` and `game_over.wav` are the provided recordings, kept at their original length (`game_over.wav` is a spoken "game over"). They are not generated or trimmed, and the game works with any length.
 
 ## Components and Interfaces
 
-### game-config.json and src/game-config.js
-
-`game-config.json` is used as is (the `_comment` key is ignored). `src/game-config.js` is generated:
-
-```js
-// src/game-config.js  GENERATED by scripts/sync-config.js from game-config.json. Do not edit.
-(function (root) {
-  root.GAME_CONFIG = { /* the parsed JSON, exactly as in game-config.json */ };
-})(typeof window !== 'undefined' ? (window.FlappyKiro = window.FlappyKiro || {}) : module.exports);
-```
-
 ### config.js
 
-One plain file turns the JSON into the config used everywhere. It is a classic script: it attaches to `FlappyKiro` in the browser and also sets `module.exports` when it exists.
+One plain ES module holds the base values, derives the rest and exports `parseOverrides`, `loadConfig`, `derive`, `TUNABLE`, `buildConfig`, `validateConfig`, `assertValidConfig` and `DEFAULT_CONFIG`.
 
-#### Mapping from JSON keys to config groups
-
-`mapJson(json)` converts the camelCase, grouped JSON into the UPPER_SNAKE config groups. `unmapJson` is its inverse and exists for the round-trip test.
-
-| JSON key | Config key | Unit | Default |
-|---|---|---|---|
-| `world.width` | `world.WIDTH` | px | 480 |
-| `world.height` | `world.HEIGHT` | px | 640 |
-| `world.groundHeight` | `world.GROUND_HEIGHT` | px | 80 |
-| `ghost.spriteSize` | `ghost.SPRITE_SIZE` | px | 32 |
-| `ghost.hitboxShape` | `ghost.HITBOX_SHAPE` | text | `"circle"` |
-| `ghost.hitboxRadius` | `ghost.HITBOX_RADIUS` | px | 12 |
-| `ghost.x` | `ghost.X` | px | 120 |
-| `ghost.gravity` | `ghost.GRAVITY` | px/s² | 800 |
-| `ghost.jumpVelocity` | `ghost.JUMP_VELOCITY` (signed, negative is up) | px/s | -300 |
-| `pipes.pipeWidth` | `pipes.PIPE_WIDTH` | px | 64 |
-| `pipes.capWidth` | `pipes.CAP_WIDTH` | px | 72 |
-| `pipes.capHeight` | `pipes.CAP_HEIGHT` | px | 24 |
-| `pipes.gapHeight` | `pipes.GAP_HEIGHT` | px | 140 |
-| `pipes.gapMargin` | `pipes.GAP_MARGIN` | px | 60 |
-| `pipes.pipeSpacing` | `pipes.PIPE_SPACING` | px | 350 |
-| `pipes.maxGapShift` | `pipes.MAX_GAP_SHIFT` | px | 160 |
-| `speed.wallSpeed` | `speed.INITIAL_SPEED` | px/s | 120 |
-| `speed.speedIncrement` | `speed.SPEED_INCREMENT` | px/s | 10 |
-| `speed.speedStepInterval` | `speed.SPEED_STEP_INTERVAL` | points | 5 |
-| `speed.maxSpeed` | `speed.MAX_SPEED` | px/s | 240 |
-| `timing.invincibilityMs` | `timing.INVINCIBILITY_MS` | ms | 1500 |
-| `timing.crashMs` | `timing.CRASH_MS` | ms | 500 |
-| `timing.crashFlashMs` | `timing.CRASH_FLASH_MS` | ms | 100 |
-| `timing.blinkMs` | `timing.BLINK_MS` | ms | 100 |
-| `timing.lockoutMs` | `timing.LOCKOUT_MS` | ms | 500 |
-| `timing.maxFrameMs` | `timing.MAX_FRAME_MS` | ms | 50 |
-| `clouds.speedMin` | `clouds.SPEED_MIN` | px/s | 10 |
-| `clouds.speedMax` | `clouds.SPEED_MAX` | px/s | 60 |
-| `clouds.layers[i].{width,depth,alpha}` | `clouds.LAYERS[i].{WIDTH,DEPTH,ALPHA}` | px, 0..1, 0..1 | see JSON |
-
-#### Base values that are not in the JSON
+#### Base values
 
 ```js
-// EXTRA_BASE: fixed by ui-mockups.md and ghosty-sprites.md, not tuned in game-config.json.
-const EXTRA_BASE = {
+// BASE (excerpt: the ui and animation groups): fixed by ui-mockups.md and ghosty-sprites.md, not overridable. The world, ghost, pipes, speed, timing and clouds groups hold the defaults from the requirements.
+const BASE = {
   ui: {
     BUTTON_WIDTH: 200,          // px
     BUTTON_HEIGHT: 44,          // px
@@ -348,10 +281,8 @@ const TUNABLE = Object.freeze({
   cloudSpeedMax:    ['clouds', 'SPEED_MAX'],
 });
 
-// mapJson(json)            -> base values { world, ghost, pipes, speed, timing, clouds }
-// unmapJson(base)          -> json-shaped object (inverse of mapJson, without _comment)
 // buildConfig(overrides?)  -> frozen { world, ghost, pipes, speed, timing, clouds, ui, animation }
-//                             = mapJson(GAME_CONFIG) + overrides + EXTRA_BASE + derive(...)
+//                             = BASE + overrides + derive(...)
 // validateConfig(cfg)      -> { valid: boolean, errors: string[] }
 // assertValidConfig(cfg)   -> throws Error listing every violated rule
 // parseOverrides(search)   -> { overrides: { [group]: { [KEY]: number } }, warnings: string[] }
@@ -361,32 +292,26 @@ const TUNABLE = Object.freeze({
 
 #### validateConfig
 
-`validateConfig(cfg)` collects every violated rule instead of stopping at the first, so one message lists all problems. Each error string starts with a stable rule id followed by a plain explanation, for example `gap.heightVsHitbox: GAP_HEIGHT (30) must be greater than 2 * HITBOX_RADIUS (24)`.
+`validateConfig(cfg)` collects every violated rule instead of stopping at the first, so one message lists all problems. It checks only relationships that a tunable can break; fixed groups such as `ui` and `animation` are not validated. Each error string starts with a stable rule id followed by a plain explanation, for example `gap.heightVsHitbox: GAP_HEIGHT (30) must be greater than 2 * HITBOX_RADIUS (24)`.
 
 | Rule id | Relationship that must hold | Requirement |
 |---|---|---|
-| `number.finite` | Every numeric base value is a finite number; all sizes, speeds, durations and `SPEED_STEP_INTERVAL` are greater than 0; `SPEED_STEP_INTERVAL` is an integer; `SPEED_INCREMENT >= 0`; `GAP_MARGIN >= 0` | all |
-| `ghost.shape` | `HITBOX_SHAPE` is `"circle"` | 6.1 |
+| `number.finite` | Every numeric base value is a finite number (the tunables can break this); all sizes, speeds, durations and `SPEED_STEP_INTERVAL` are greater than 0; `SPEED_STEP_INTERVAL` is an integer; `SPEED_INCREMENT >= 0`; `GAP_MARGIN >= 0` | all |
 | `ghost.radiusFits` | `HITBOX_RADIUS > 0` and `2 * HITBOX_RADIUS <= SPRITE_SIZE` (so `HITBOX_MARGIN >= 0`) | 6.1, 6.11 |
 | `ghost.jumpUp` | `JUMP_VELOCITY < 0` | 3.2 |
-| `ghost.insideWorld` | `0 < X < WIDTH` | 3.4 |
-| `pipes.capCoversBody` | `CAP_WIDTH >= PIPE_WIDTH` | 6.2 |
 | `pipes.spacing` | `PIPE_SPACING > CAP_WIDTH` | 4.2 |
 | `gap.heightVsHitbox` | `GAP_HEIGHT > 2 * HITBOX_RADIUS` | 4.4 |
+| `gap.capFits` | `GAP_MARGIN >= CAP_HEIGHT`, so a pipe cap never reaches the top of the play area | 4.5 |
 | `gap.fitsAboveGround` | `2 * GAP_MARGIN + GAP_HEIGHT <= GROUND_TOP`, equivalent to `GAP_CENTER_MIN <= GAP_CENTER_MAX` | 4.5 |
-| `gap.shiftPositive` | `MAX_GAP_SHIFT > 0` | 4.6 |
 | `speed.order` | `INITIAL_SPEED <= MAX_SPEED` | 4.9, 4.10 |
 | `reach.fall` | Fall time for `MAX_GAP_SHIFT`: `sqrt(2 * MAX_GAP_SHIFT / GRAVITY) < PIPE_SPACING / MAX_SPEED` | 4.7 |
 | `reach.climb` | Climb time for `MAX_GAP_SHIFT` with back-to-back jumps: `ceil(MAX_GAP_SHIFT / h) * (JUMP_SPEED / GRAVITY) < PIPE_SPACING / MAX_SPEED`, where `h = JUMP_SPEED^2 / (2 * GRAVITY)` is the rise of one jump | 4.7 |
 | `clouds.order` | `SPEED_MIN < SPEED_MAX` (stricter than `<=` so that two distinct speeds exist) and `SPEED_MIN > 0` | 13.3, 13.5 |
 | `clouds.belowScroll` | `SPEED_MAX < INITIAL_SPEED`, so every cloud speed is below the scroll speed at all times | 13.5 |
-| `clouds.layers` | At least two layers; every `DEPTH` in [0, 1]; layer depths are distinct and increase with `WIDTH`; every `ALPHA` in (0, 1) | 13.2, 13.3, 13.4 |
 | `timing.positive` | `INVINCIBILITY_MS`, `CRASH_MS`, `CRASH_FLASH_MS`, `BLINK_MS`, `LOCKOUT_MS` and `MAX_FRAME_MS` are all greater than 0 | 7.2, 7.7, 7.8, 8.1, 12.5 |
-| `anim.tables` | `IDLE_FRAMES` has at least 2 frames, `FLAP_FRAMES` at least 1, `DEATH_FRAMES` at least 1, and every listed `ms` is greater than 0 | 18.1, 18.2, 18.5 |
 | `anim.deathFitsCrash` | `DEATH_TOTAL_MS <= CRASH_MS`, so the final death frame is reached by the end of the Crash_Animation | 7.2, 18.5 |
-| `ui.fits` | `BUTTON_WIDTH <= WIDTH`; `MENU_STACK_BOTTOM <= GROUND_TOP`; `MENU_BUTTON_Y`, `PANEL_BUTTON_Y` and `GAME_OVER_BUTTON_Y` plus `BUTTON_HEIGHT` are at most `GROUND_TOP`; the two icons do not overlap each other (`MUTE_ICON_X + ICON_SIZE <= PAUSE_ICON_X`) | 17.1, 17.8 |
 
-Reachability with the new defaults, from `game-config.json`: `h = 300² / (2 * 800) = 56.25 px`, `ceil(160 / 56.25) = 3` jumps, each jump lasts `300 / 800 = 0.375 s`, so the climb takes `3 * 0.375 = 1.125 s`. The fall takes `sqrt(2 * 160 / 800) = sqrt(0.4) ≈ 0.632 s`. The limit is `350 / 240 ≈ 1.458 s`, so both rules pass. The climb estimate is a deliberate upper bound: it assumes each jump is taken at the apex of the previous one.
+Reachability with the defaults in `src/config.js`: `h = 300² / (2 * 800) = 56.25 px`, `ceil(160 / 56.25) = 3` jumps, each jump lasts `300 / 800 = 0.375 s`, so the climb takes `3 * 0.375 = 1.125 s`. The fall takes `sqrt(2 * 160 / 800) = sqrt(0.4) ≈ 0.632 s`. The limit is `350 / 240 ≈ 1.458 s`, so both rules pass. The climb estimate is a deliberate upper bound: it assumes each jump is taken at the apex of the previous one.
 
 The gap is 140 px high and the hitbox diameter is 24 px, so `gap.heightVsHitbox` passes with 116 px of room. `GAP_CENTER_MIN` is 130 and `GAP_CENTER_MAX` is 430. The menu stack bottom is `400 + 2 * 44 + 16 = 504`, which is above `GROUND_TOP` (560), so `ui.fits` passes.
 
@@ -407,7 +332,7 @@ If a name appears more than once, the last value wins.
 1. `parseOverrides` and `buildConfig(overrides)`.
 2. If `validateConfig` accepts the result, return it. Warnings from step 1 go to `log.warn`.
 3. Otherwise `log.warn` reports all errors and that the defaults are used, and the function returns `DEFAULT_CONFIG`.
-4. `DEFAULT_CONFIG` itself is checked with `assertValidConfig` when the module loads. If someone edits `game-config.json` into an invalid combination and syncs it, the page fails at startup with the error list instead of running a broken game.
+4. `DEFAULT_CONFIG` itself is checked with `assertValidConfig` when the module loads. If someone edits `BASE` into an invalid combination, the page fails at startup with the error list instead of running a broken game.
 
 ### physics.js
 
@@ -449,7 +374,7 @@ function nearestPoint(rect, cx, cy)        // -> { x: clamp(cx, rect.x, rect.x +
                                            //      y: clamp(cy, rect.y, rect.y + rect.h) }
 function distanceSqToRect(circle, rect)    // squared distance from the circle center to nearestPoint
 function circleHitsRect(circle, rect)      // distanceSqToRect(circle, rect) < r * r   (strict)
-function hitsPipe(cfg, ghost, pairs)       // any pipe rectangle hit; a pipe hitbox is the union of its body and cap
+function hitsPipe(cfg, ghost, pairs)       // any pipe rectangle hit; the rectangles come from `pipes.pipeRects` (body and cap, no separate geometry) and zero-size rectangles are skipped
 function hitsGround(cfg, ghost)            // ghost.y + HITBOX_RADIUS >= GROUND_TOP
 function hitsCeiling(cfg, ghost)           // ghost.y - HITBOX_RADIUS <= 0
 function detect(cfg, ghost, pairs, invincible) // -> { pipe, ground, ceiling } booleans
@@ -533,13 +458,13 @@ The selected button is initially PLAY (Requirement 17.2). The renderer draws a w
 
 ```js
 function createGame(cfg, highScore, rng)   // -> GameState in Main_Menu with menu = initialMenu()
-function handleInput(state, input, deps)   // input: { kind: 'space' | 'enter' | 'up' | 'down' | 'pause' | 'hidden' }
+function handleInput(state, input, { rng })   // input: { kind: 'space' | 'enter' | 'up' | 'down' | 'pause' | 'hidden' }
                                            //      | { kind: 'pointer', x, y }   (logical coordinates); returns events
-function update(state, dt, deps)           // dt already clamped; returns array of events
+function update(state, dt, { rng })           // dt already clamped; returns array of events
 function startRound(state, rng)            // resets round values, starts invincibility, applies jump
 ```
 
-`deps` is `{ cfg, rng }`; `createGame` also stores `cfg` on the state so `startRound` uses the same config. `handleInput` and `update` return events:
+Both functions take only `{ rng }`; `createGame` stores `cfg` on the state so every function uses the same config. `handleInput` and `update` return events:
 
 | Event | Emitted when | Sound |
 |---|---|---|
@@ -556,9 +481,9 @@ Update order while Playing:
 2. Step the ghost physics.
 3. Move pipes and ground at the current speed, move clouds, remove off-screen pairs, spawn if needed.
 4. Score pairs whose right edge the ghost center has passed; emit one `scored` per increase; recompute speed from the new score.
-5. Run collision detection; on a hit change to Game_Over, end invincibility, start the crash timer, reset `deathMs` to 0 and set the lockout, and emit `gameOver`.
+5. Run collision detection; on a hit change to Game_Over, end invincibility, start the crash timer, reset `deathMs` to 0 and set the lockout, set `newHighScore` once (score greater than the stored High_Score), and emit `gameOver`.
 
-While Game_Over, `update` advances the crash animation: `deathMs` grows, the ghost falls under gravity until its circle bottom reaches the ground boundary (`y + HITBOX_RADIUS = GROUND_TOP`, then `y` is clamped there), timers count down, and world positions stay unchanged. While Main_Menu, `update` advances only `animClockMs`. While Paused, `update` changes nothing.
+While Game_Over, `update` advances the crash animation: `deathMs` grows, the ghost falls under gravity until its circle bottom reaches the ground boundary (`y + HITBOX_RADIUS = GROUND_TOP`, then `y` is clamped there), timers count down (`newHighScore` is not recomputed), and world positions stay unchanged. While Main_Menu, `update` advances only `animClockMs`. While Paused, `update` changes nothing.
 
 Starting a round (`startRound`) sets the score to 0, the speed to `INITIAL_SPEED`, clears pipes, starts invincibility, applies a jump (flap animation restarts: `flapMs = 0`), resets `deathMs`, closes the panel, and emits `jump`. Both Main_Menu start paths (PLAY activation, a pointer on an empty area) and the Game_Over restart paths (Space, Enter on RESTART, a pointer on RESTART or on an empty area) call it, so they produce identical results.
 
@@ -905,7 +830,7 @@ Reflection on redundancy: the prework produced many testable criteria. Criteria 
 
 ### Property 43: Config validation accepts the defaults and rejects each broken relationship
 
-`validateConfig(DEFAULT_CONFIG)` SHALL report valid with no errors. *For any* valid config and any one validated relationship, a config changed so that only that relationship is broken SHALL be reported invalid, and the errors SHALL include that relationship's rule id. The broken variants are: `GAP_HEIGHT <= 2 * HITBOX_RADIUS`; `2 * HITBOX_RADIUS > SPRITE_SIZE`; `HITBOX_SHAPE` other than `"circle"`; `JUMP_VELOCITY >= 0`; `2 * GAP_MARGIN + GAP_HEIGHT > GROUND_TOP`; `MAX_GAP_SHIFT` raised, or `|JUMP_VELOCITY|` lowered, until the fall or climb time is at least `PIPE_SPACING / MAX_SPEED`; `SPEED_MAX >= INITIAL_SPEED` for clouds; `SPEED_MIN >= SPEED_MAX` for clouds; `INITIAL_SPEED > MAX_SPEED`; any duration set to 0 or below; `DEATH_TOTAL_MS > CRASH_MS`; menu buttons that extend below `GROUND_TOP`; and any numeric value set to `NaN`, `Infinity` or a non-number. *For any* config with several broken relationships, the errors SHALL include the rule id of every one of them.
+`validateConfig(DEFAULT_CONFIG)` SHALL report valid with no errors. *For any* valid config and any one validated relationship, a config changed so that only that relationship is broken SHALL be reported invalid, and the errors SHALL include that relationship's rule id. The broken variants are: `GAP_HEIGHT <= 2 * HITBOX_RADIUS`; `2 * HITBOX_RADIUS > SPRITE_SIZE`; `JUMP_VELOCITY >= 0`; `2 * GAP_MARGIN + GAP_HEIGHT > GROUND_TOP`; `GAP_MARGIN < CAP_HEIGHT`; `MAX_GAP_SHIFT` raised, or `|JUMP_VELOCITY|` lowered, until the fall or climb time is at least `PIPE_SPACING / MAX_SPEED`; `SPEED_MAX >= INITIAL_SPEED` for clouds; `SPEED_MIN >= SPEED_MAX` for clouds; `INITIAL_SPEED > MAX_SPEED`; any duration set to 0 or below; `DEATH_TOTAL_MS > CRASH_MS`; and any numeric value set to `NaN`, `Infinity` or a non-number. *For any* config with several broken relationships, the errors SHALL include the rule id of every one of them.
 
 **Validates: Requirements 4.4, 4.5, 4.6, 4.7, 6.1, 7.2, 7.7, 8.1, 12.5, 13.3, 13.5, 17.1**
 
@@ -915,9 +840,8 @@ Reflection on redundancy: the prework produced many testable criteria. Criteria 
 
 **Validates: Requirements 4.5, 6.1, 6.3, 13.5, 17.1**
 
-### Property 45: JSON mapping round trip
-
-*For any* JSON-shaped object with the structure of `game-config.json`, mapping it to config base values and mapping those back (`unmapJson(mapJson(json))`) SHALL return an object equal to the original, every JSON value SHALL appear unchanged under its mapped config key (for example `wallSpeed` as `INITIAL_SPEED` and the signed `jumpVelocity` as `JUMP_VELOCITY`), and unknown keys such as `_comment` SHALL be ignored.
+### Property 45: (removed: config now inline)
+Removed. The base values are one plain object in `src/config.js`, so there is no JSON mapping to round-trip. The number is kept so the other properties keep theirs.
 
 **Validates: Requirements 1.6**
 
@@ -947,13 +871,10 @@ Reflection on redundancy: the prework produced many testable criteria. Criteria 
 | Jump or RESTART during lockout, or Jump while paused | Ignored with no state change and no sound (8.1, 10.6, 17.13). |
 | Pointer on an icon or a button in a mode where it does not exist | The hit test finds nothing and the pointer is treated as in the Input Routing table (for example an unrelated tap in Paused is ignored). |
 | Unknown or out-of-state input | The state machine returns the state unchanged. |
-| `FlappyKiro.GAME_CONFIG` missing because `src/game-config.js` was not loaded or not generated | Startup throws `Error('game-config.js not loaded: run npm run sync-config')`; the page shows the message in place of the canvas and the game does not start. |
-| `src/game-config.js` out of date with `game-config.json` | The parity test fails in `npm test`. At runtime the generated script is used as is. |
-| `game-config.json` holds a malformed or missing key | `mapJson` reports the missing key by path, and startup fails with that message. |
 | URL override with an unknown name | The entry is ignored and `console.warn` names the parameter. The other overrides still apply. |
 | URL override with an empty or non-numeric value (for example `?gravity=abc`) | The entry is ignored and `console.warn` names the parameter and the bad value. |
 | URL overrides that parse but produce an invalid config (for example `?gapHeight=20`) | All overrides are dropped, `console.warn` lists every violated rule id with its explanation, and the game starts with `DEFAULT_CONFIG`. |
-| Default config invalid because `game-config.json` was edited into an invalid combination | `assertValidConfig` throws `Invalid Flappy Kiro config:` followed by one line per violated rule. The page shows the message in place of the canvas and the game does not start. |
+| Default config invalid because `BASE` in `src/config.js` was edited into an invalid combination | `assertValidConfig` throws `Invalid Flappy Kiro config:` followed by one line per violated rule. The page shows the message in place of the canvas and the game does not start. |
 | Code tries to change the config at runtime | Config groups are frozen, so the write is ignored (or throws in strict mode) and the values in use cannot change after startup. |
 | `rng` returns a value outside [0, 1) | Gap choice clamps the result into the valid range. |
 
@@ -967,20 +888,19 @@ Both property tests and example-based tests are used, and they complement each o
 
 - Test runner: `vitest` in Node, run once with `npx vitest --run`.
 - Property-based testing library: `fast-check`. Properties are not implemented from scratch.
-- The browser stays dependency-free; `package.json` holds dev dependencies only, pinned to exact versions, plus the script `sync-config`.
-- Logic modules export through `module.exports` when available so Node can import them.
+- The browser stays dependency-free; `package.json` holds dev dependencies only, pinned to exact versions, plus the `test` and `generate-score-wav` scripts.
+- All source files are plain ES modules (`"type": "module"` in `package.json`) with named exports, so Node and the browser import the same files.
 
 ### Property Test Configuration
 
 - Each of the 47 correctness properties is implemented by a single property-based test.
 - Each test runs at least 100 iterations (`{ numRuns: 100 }` or more).
 - Each test carries a tag comment in the form **Feature: flappy-kiro, Property {number}: {property_text}**.
-- Tests assert against the config in use. They import `DEFAULT_CONFIG` and `buildConfig` from `src/config.js` and read every expected value from the config (`cfg.ghost.GRAVITY`, `cfg.ghost.HITBOX_RADIUS`, `cfg.pipes.GAP_CENTER_MIN`, `cfg.world.GROUND_TOP`, `cfg.ui.BUTTON_WIDTH`, `cfg.animation.FLAP_FRAMES` and so on). Test files contain no literal copies of config numbers. Changing a value in `game-config.json` therefore needs no test edits, as long as the new config still passes `validateConfig`.
+- Tests assert against the config in use. They import `DEFAULT_CONFIG` and `buildConfig` from `src/config.js` and read every expected value from the config (`cfg.ghost.GRAVITY`, `cfg.ghost.HITBOX_RADIUS`, `cfg.pipes.GAP_CENTER_MIN`, `cfg.world.GROUND_TOP`, `cfg.ui.BUTTON_WIDTH`, `cfg.animation.FLAP_FRAMES` and so on). Test files contain no literal copies of config numbers. Changing a value in `BASE` therefore needs no test edits, as long as the new config still passes `validateConfig`.
 - Config generators (`arbConfig`): each tunable value is drawn from a range expressed relative to its default, for example `[0.7 * default, 1.3 * default]`, then the candidate is built with `buildConfig` and kept only if `validateConfig` accepts it. The relative ranges are chosen so most draws are accepted. A separate sanity test fails if too many candidates are rejected, so the filter cannot hide an empty generator.
 - Each property from 1 to 42 takes `cfg` from `arbConfig` (mixed with `DEFAULT_CONFIG` as a fixed case), so it is checked against both the defaults and variations. Property 47 states this explicitly for the gameplay properties and adds the "circle fits in the chosen gap" check.
 - Property 15 (touching is not a hit) uses a dedicated generator that places the circle exactly `HITBOX_RADIUS` from a rectangle edge along an axis, using integer and half-integer coordinates so that the squared-distance comparison is exact. A second generator places the circle at the diagonal corner, where the distance is a square root, and checks with a small tolerance on either side of the radius.
 - Property 43 breaks one relationship at a time with a mutation function per rule id applied to a valid config, plus a combination case that applies several mutations and checks that all their rule ids are reported.
-- Property 45 generates JSON-shaped objects (positive finite numbers for every key, a `"circle"` shape and three or more cloud layers) and checks the round trip; it does not need `validateConfig` to accept them.
 - Property 46 generates query strings from three sources: whitelisted names with finite numbers, whitelisted names with non-numeric text, and unknown names. A fake logger records warnings.
 - Properties 29 to 32 generate elapsed times from slightly below 0 up to a few multiples of the table totals, and compare with an independent cumulative-sum implementation inside the test.
 - Properties 36 to 42 generate input sequences over `space`, `enter`, `up`, `down`, `pointer` (points inside and outside every control rectangle, built from the config's rectangles) and `pause`, applied to states in each mode.
@@ -989,7 +909,7 @@ Both property tests and example-based tests are used, and they complement each o
 
 ### Unit and Example Tests
 
-- **Config parity.** `GAME_CONFIG` from `src/game-config.js` deep-equals the parsed `game-config.json`, and running the generator in a temporary directory reproduces `src/game-config.js` byte for byte. The default config built from them has the expected values from the requirements: gravity 800, jump velocity -300, wall speed 120, gap height 140, pipe spacing 350, max gap shift 160, max speed 240, sprite size 32 and hitbox radius 12.
+- **Default values.** The default config has the expected values from the requirements: gravity 800, jump velocity -300, wall speed 120, gap height 140, pipe spacing 350, max gap shift 160, max speed 240, sprite size 32 and hitbox radius 12.
 - **Reachability numbers.** `validateConfig(DEFAULT_CONFIG)` reports no `reach.fall` or `reach.climb` error, and the computed values are 3 jumps, 1.125 s of climbing and about 0.632 s of falling, both below `350 / 240` (Requirement 4.7).
 - Initial state is Main_Menu (1.2, 15.1), the PLAY button is selected (17.2), and an empty storage reads a High_Score of 0 (2.4).
 - **Asset failure table.** All 16 subsets of failed assets (ghosty.png, jump.wav, score.wav, game_over.wav): only the failed assets are replaced and every other asset loads and plays (1.4, 1.5, 19.6).
@@ -997,15 +917,15 @@ Both property tests and example-based tests are used, and they complement each o
 - **Mock-canvas tests.** Menu overlay text and buttons, the selected-button border, "BEST: N" in the panel, the HUD icons positions, the paused overlay, the game over overlay with and without "NEW BEST!", the score at the top center, the ghost drawn from the sprite, clouds drawn first, smoothing disabled (2.1, 5.2, 7.4, 7.5, 9.2, 13.1, 14.5, 16.6, 17.1, 17.5, 17.8, 17.10, 17.11).
 - **Renderer frames.** With a mock canvas, an idle, a flap and a death `FrameDesc` produce the expected translate, rotate and scale calls around the ghost center, and with a sheet present the source rectangle comes from `sheetSource` (18.6, 18.7).
 - **Input wiring.** Space, Enter, arrow keys, click and touch map to the right inputs; Space calls `preventDefault`; a click on the scaled canvas is converted with `toLogical` (10.1 to 10.4, 14.3).
-- **Config examples.** The default config is valid and deeply frozen; a missing `GAME_CONFIG` or an invalid default makes startup throw an error whose message names the problem.
+- **Config examples.** The default config is valid and deeply frozen; an invalid default makes `assertValidConfig` throw an error whose message names the broken rules.
 - **URL override examples.** `?gravity=1500&gapHeight=180` applies both values; `?gravity=abc`, `?gravity=` and `?foo=1` are ignored with a warning; `?gapHeight=20` falls back to the defaults with a warning that names `gap.heightVsHitbox`; a repeated name uses the last value.
 - Resume after a hidden tab: the first frame delta after resume is small (12.4).
 - Clouds do not affect score or collisions (13.9, 13.10).
 
 ### Smoke and Manual Checks
 
-- `index.html` loads from `file://` with classic scripts, the config coming from `src/game-config.js`, and no network requests (1.1, 1.3, 1.6).
-- `assets/score.wav` exists and is a valid WAV. A informational check reports the duration of each sound against the targets in `audio-assets.md` (0.1 s, 0.2 s, 0.3 s) without failing the build, because the existing `jump.wav` and `game_over.wav` are longer than the targets (19.1 to 19.3).
+- `index.html` loads one `<script type="module" src="src/main.js">` when served over HTTP (it does not work from `file://`), with no network requests besides the assets (1.1, 1.3, 1.6).
+- `assets/score.wav` exists and is a valid WAV. A informational check reports the duration of each sound against the targets in `audio-assets.md` (0.1 s, 0.2 s, 0.3 s) without failing the build, because the provided `jump.wav` and `game_over.wav` recordings keep their original length (`game_over.wav` is a spoken "game over") (19.1 to 19.3).
 - Canvas is 480 by 640, scaled with CSS, using a pixel font and no smoothing (9.1, 9.4, 9.5).
 - Visual comparison with `img/example-ui.png` for the retro style (9.3), and with `ui-mockups.md` for the menu, HUD, pause and game over layouts. The reference screenshot could not be read earlier, so the palette in `renderer.js` is checked against it by eye.
 - Visual check that the idle bob, flap squash and stretch, and death rotation and white flash look right on the single `ghosty.png` (18.1 to 18.5).

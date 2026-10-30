@@ -1,9 +1,7 @@
 // Validates: Requirements 1.4, 1.5, 1.7, 19.6
 import { describe, it, expect } from 'vitest';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { loadAssets, loadImage, loadSound, drawFallbackSprite, FALLBACK_SIZE } = require('../../src/assets.js');
+import { loadAssets, loadImage, loadSound, drawFallbackSprite, FALLBACK_SIZE } from '../../src/assets.js';
 
 const SPRITE = 'assets/ghosty.png';
 const SOUNDS = { jump: 'assets/jump.wav', score: 'assets/score.wav', game_over: 'assets/game_over.wav' };

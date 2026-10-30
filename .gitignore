@@ -53,3 +53,5 @@ htmlcov/
 *.egg-info/
 dist/
 build/
+# Kiro spec task metadata
+.kiro/specs/flappy-kiro/tasks.meta.json

@@ -2,12 +2,10 @@
 // **Validates: Requirements 2.2, 4.9, 4.14, 5.3, 7.7, 8.2, 17.4**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig, rng } from '../helpers/arbitraries.js';
 import { arbGameState, arbPointerInput, controlRects, runInputs } from '../helpers/game-arbs.js';
 
-const require = createRequire(import.meta.url);
-const physics = require('../../src/physics.js');
+import * as physics from '../../src/physics.js';
 
 const inside = (r, x, y) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
 

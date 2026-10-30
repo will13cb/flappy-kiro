@@ -4,11 +4,9 @@
 // (Property 31).
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { flapFrame, idleFrame } = require('../../src/animation.js');
+import { flapFrame, idleFrame } from '../../src/animation.js';
 
 const arbVy = fc.double({ min: -1500, max: 1500, noNaN: true, noDefaultInfinity: true });
 

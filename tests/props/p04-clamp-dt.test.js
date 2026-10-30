@@ -2,11 +2,9 @@
 // **Validates: Requirements 12.5**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { clampDt } = require('../../src/physics.js');
+import { clampDt } from '../../src/physics.js';
 
 const arbRaw = fc.oneof(
   fc.double({ noNaN: true, min: -10, max: 10, noDefaultInfinity: true }),

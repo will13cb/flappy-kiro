@@ -2,10 +2,8 @@
 // **Validates: Requirements 6.6, 6.10, 6.11**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { nearestPoint, distanceSqToRect, circleHitsRect } = require('../../src/collision.js');
+import { nearestPoint, distanceSqToRect, circleHitsRect } from '../../src/collision.js';
 
 // Half-integer values (k / 2) keep all squared distances exactly representable.
 const half = (min, max) => fc.integer({ min: min * 2, max: max * 2 }).map((k) => k / 2);

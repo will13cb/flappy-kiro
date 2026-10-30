@@ -2,7 +2,6 @@
 // **Validates: Requirements 10.6, 12.3, 14.1, 14.2, 14.8, 15.2, 15.3, 15.4, 15.5, 15.8, 15.9, 17.5, 17.6**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { DEFAULT_CONFIG as cfg, rng } from '../helpers/arbitraries.js';
 import {
   arbAnyGameState,
@@ -14,8 +13,7 @@ import {
   runSteps,
 } from '../helpers/game-arbs.js';
 
-const require = createRequire(import.meta.url);
-const { handleInput } = require('../../src/game.js');
+import { handleInput } from '../../src/game.js';
 
 const PERMITTED = new Set([
   'Main_Menu>Playing',

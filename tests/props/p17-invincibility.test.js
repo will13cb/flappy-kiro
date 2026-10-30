@@ -2,14 +2,12 @@
 // **Validates: Requirements 7.8, 7.11, 7.12, 7.13**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { DEFAULT_CONFIG as cfg, arbDt } from '../helpers/arbitraries.js';
 import { arbGameState, buildState } from '../helpers/game-arbs.js';
 import { rng } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { update } = require('../../src/game.js');
-const { ghostHidden } = require('../../src/renderer.js');
+import { update } from '../../src/game.js';
+import { ghostHidden } from '../../src/renderer.js';
 
 const { INVINCIBILITY_MS, BLINK_MS } = cfg.timing;
 const arbDts = fc.array(arbDt(cfg), { minLength: 1, maxLength: 120 });

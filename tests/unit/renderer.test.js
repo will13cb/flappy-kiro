@@ -1,13 +1,11 @@
 // Validates: Requirements 2.1, 5.2, 7.4, 7.5, 9.5, 13.1, 14.5, 16.6, 17.1, 17.5, 17.8, 17.10, 17.11, 18.6, 18.7
 import { describe, it, expect } from 'vitest';
-import { createRequire } from 'module';
 import { rng, DEFAULT_CONFIG } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const renderer = require('../../src/renderer.js');
-const { createGame } = require('../../src/game.js');
-const menu = require('../../src/menu.js');
-const physics = require('../../src/physics.js');
+import * as renderer from '../../src/renderer.js';
+import { createGame } from '../../src/game.js';
+import * as menu from '../../src/menu.js';
+import * as physics from '../../src/physics.js';
 
 const cfg = DEFAULT_CONFIG;
 const DEG = Math.PI / 180;

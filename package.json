@@ -2,10 +2,10 @@
   "name": "flappy-kiro",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Flappy Kiro: a browser game. Dev dependencies only; the game itself has no dependencies.",
   "scripts": {
     "test": "vitest --run",
-    "sync-config": "node scripts/sync-config.js",
     "generate-score-wav": "node scripts/generate-score-wav.js"
   },
   "devDependencies": {

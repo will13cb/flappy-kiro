@@ -1,12 +1,10 @@
 // Feature: flappy-kiro, Property 43: Config validation accepts the defaults and rejects each broken relationship
-// **Validates: Requirements 4.4, 4.5, 4.6, 4.7, 6.1, 7.2, 7.7, 8.1, 12.5, 13.3, 13.5, 17.1**
+// **Validates: Requirements 4.4, 4.5, 4.6, 4.7, 6.1, 7.2, 7.7, 8.1, 13.3, 13.5, 17.1**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig, DEFAULT_CONFIG } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { validateConfig } = require('../../src/config.js');
+import { validateConfig } from '../../src/config.js';
 
 // Configs are deep-frozen, so every mutation works on a plain clone.
 const thaw = (cfg) => JSON.parse(JSON.stringify(cfg));
@@ -15,19 +13,15 @@ const dbl = (min, max) => fc.double({ min, max, noNaN: true, noDefaultInfinity: 
 // t in (0, 1]: scales how far a relationship is pushed past its limit.
 const arbT = dbl(0.01, 1);
 
-const DURATIONS = ['INVINCIBILITY_MS', 'CRASH_MS', 'CRASH_FLASH_MS', 'BLINK_MS', 'LOCKOUT_MS', 'MAX_FRAME_MS'];
+const DURATIONS = ['INVINCIBILITY_MS', 'CRASH_MS', 'LOCKOUT_MS'];
 const BAD_NUMBERS = [NaN, Infinity, -Infinity];
 const BAD_NON_NUMBERS = ['abc', '12', null, true, {}];
 const FINITE_KEYS = [
-  ['world', 'WIDTH'], ['world', 'HEIGHT'], ['world', 'GROUND_HEIGHT'],
-  ['ghost', 'SPRITE_SIZE'], ['ghost', 'HITBOX_RADIUS'], ['ghost', 'GRAVITY'],
-  ['pipes', 'PIPE_WIDTH'], ['pipes', 'CAP_WIDTH'], ['pipes', 'CAP_HEIGHT'], ['pipes', 'GAP_HEIGHT'],
-  ['pipes', 'PIPE_SPACING'], ['pipes', 'MAX_GAP_SHIFT'],
+  ['ghost', 'HITBOX_RADIUS'], ['ghost', 'GRAVITY'],
+  ['pipes', 'GAP_HEIGHT'], ['pipes', 'PIPE_SPACING'], ['pipes', 'MAX_GAP_SHIFT'],
   ['speed', 'INITIAL_SPEED'], ['speed', 'SPEED_STEP_INTERVAL'], ['speed', 'MAX_SPEED'],
-  ['timing', 'INVINCIBILITY_MS'], ['timing', 'CRASH_MS'], ['timing', 'CRASH_FLASH_MS'],
-  ['timing', 'BLINK_MS'], ['timing', 'LOCKOUT_MS'], ['timing', 'MAX_FRAME_MS'],
+  ['timing', 'INVINCIBILITY_MS'], ['timing', 'CRASH_MS'], ['timing', 'LOCKOUT_MS'],
   ['clouds', 'SPEED_MIN'], ['clouds', 'SPEED_MAX'],
-  ['ui', 'BUTTON_WIDTH'], ['ui', 'BUTTON_HEIGHT'], ['ui', 'ICON_SIZE'],
 ];
 
 // One mutation per rule id. Each takes a thawed config and t in (0, 1], and breaks only its rule.
@@ -36,16 +30,16 @@ const MUTATIONS = {
     c.pipes.GAP_HEIGHT = 2 * c.ghost.HITBOX_RADIUS * (1 - 0.5 * (t - 0.01)); // <= 2 * radius
   },
   'ghost.radiusFits': (c, t) => {
-    c.ghost.HITBOX_RADIUS = c.ghost.SPRITE_SIZE / 2 + t * 10; // 2 * radius > SPRITE_SIZE
-  },
-  'ghost.shape': (c, t) => {
-    c.ghost.HITBOX_SHAPE = t > 0.5 ? 'square' : 'Circle';
+    c.ghost.HITBOX_RADIUS = c.ghost.SPRITE_SIZE / 2 + 1 + t * 10;
   },
   'ghost.jumpUp': (c, t) => {
     c.ghost.JUMP_VELOCITY = t > 0.5 ? 0 : t * 100;
   },
   'gap.fitsAboveGround': (c, t) => {
     c.pipes.GAP_MARGIN = (c.world.GROUND_TOP - c.pipes.GAP_HEIGHT) / 2 + t * 50;
+  },
+  'gap.capFits': (c, t) => {
+    c.pipes.GAP_MARGIN = c.pipes.CAP_HEIGHT * (1 - t); // 0 <= margin < CAP_HEIGHT
   },
   'reach.fall': (c, t) => {
     const limit = c.pipes.PIPE_SPACING / c.speed.MAX_SPEED;
@@ -75,18 +69,15 @@ const MUTATIONS = {
   'anim.deathFitsCrash': (c, t) => {
     c.animation.DEATH_TOTAL_MS = c.timing.CRASH_MS + t * 1000;
   },
-  'ui.fits': (c, t) => {
-    c.ui.MENU_BUTTON_Y = c.world.GROUND_TOP - c.ui.BUTTON_HEIGHT + t * 100;
-    c.ui.MENU_STACK_BOTTOM = c.ui.MENU_BUTTON_Y + 2 * c.ui.BUTTON_HEIGHT + c.ui.BUTTON_GAP;
-  },
 };
 
+// gap.capFits is not combinable: it needs a small GAP_MARGIN, gap.fitsAboveGround needs a large one.
 // Order matters when several are combined: later mutations must not undo earlier ones.
 // speed.order runs before clouds.belowScroll, which runs before clouds.order.
 const COMBINABLE = [
-  'gap.heightVsHitbox', 'ghost.radiusFits', 'ghost.shape', 'ghost.jumpUp', 'gap.fitsAboveGround',
+  'gap.heightVsHitbox', 'ghost.jumpUp', 'gap.fitsAboveGround',
   'reach.fall', 'speed.order', 'clouds.belowScroll', 'clouds.order', 'timing.positive',
-  'anim.deathFitsCrash', 'ui.fits',
+  'anim.deathFitsCrash',
 ];
 
 describe('Property 43: config validation', () => {

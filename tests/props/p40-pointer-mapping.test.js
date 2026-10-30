@@ -2,11 +2,9 @@
 // **Validates: Requirements 9.1, 10.2, 10.3**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { toLogical, attachInput } = require('../../src/input.js');
+import { toLogical, attachInput } from '../../src/input.js';
 
 const num = (min, max) => fc.double({ min, max, noNaN: true, noDefaultInfinity: true });
 

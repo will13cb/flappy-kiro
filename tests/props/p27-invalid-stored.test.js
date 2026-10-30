@@ -2,11 +2,9 @@
 // **Validates: Requirements 16.3**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbStorageString, createFakeStorage, createThrowingStorage } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { HIGH_SCORE_KEY, parseHighScore, load } = require('../../src/scoreStore.js');
+import { HIGH_SCORE_KEY, parseHighScore, load } from '../../src/scoreStore.js';
 
 const isValid = (s) => /^\d+$/.test(s) && Number.isSafeInteger(Number(s));
 

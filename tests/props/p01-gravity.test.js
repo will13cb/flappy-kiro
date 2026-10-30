@@ -2,11 +2,9 @@
 // **Validates: Requirements 3.1, 3.6**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig, arbGhost, arbDt } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { stepGhost } = require('../../src/physics.js');
+import { stepGhost } from '../../src/physics.js';
 
 describe('Property 1: gravity integration', () => {
   it('sets vy to vy + GRAVITY * dt and y to y + new vy * dt', () => {

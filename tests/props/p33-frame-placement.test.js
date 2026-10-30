@@ -2,11 +2,9 @@
 // **Validates: Requirements 18.6, 18.7**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig, arbGhost } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { frameDest, sheetSource, idleFrame, flapFrame, deathFrame } = require('../../src/animation.js');
+import { frameDest, sheetSource, idleFrame, flapFrame, deathFrame } from '../../src/animation.js';
 
 const FRAME_COUNT = 10; // idle 0..1, flap 2..4, death 5..9
 

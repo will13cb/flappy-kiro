@@ -1,30 +1,10 @@
 // Validates: Requirements 4.4, 4.7, 1.6
 import { describe, it, expect } from 'vitest';
-import { createRequire } from 'module';
-import fs from 'fs';
-import path from 'path';
-import vm from 'vm';
 import fc from 'fast-check';
 import { arbConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const cfgMod = require('../../src/config.js');
-const { DEFAULT_CONFIG, validateConfig, loadConfig, parseOverrides, TUNABLE } = cfgMod;
-
-const SRC = fs.readFileSync(path.resolve(__dirname, '../../src/config.js'), 'utf8');
-const GAME_CONFIG = require('../../src/game-config.js').GAME_CONFIG;
-
-// Evaluates src/config.js in a fresh context with a stubbed require.
-function loadFresh(gameConfig) {
-  const module = { exports: {} };
-  const stubRequire = (id) => {
-    if (id === './game-config' && gameConfig !== undefined) return { GAME_CONFIG: gameConfig };
-    throw new Error('Cannot find module ' + id);
-  };
-  const ctx = vm.createContext({ module, require: stubRequire, URLSearchParams });
-  vm.runInContext(SRC, ctx);
-  return module.exports;
-}
+import * as cfgMod from '../../src/config.js';
+const { DEFAULT_CONFIG, validateConfig, assertValidConfig, buildConfig, loadConfig, parseOverrides, TUNABLE } = cfgMod;
 
 function isDeepFrozen(o) {
   if (o === null || typeof o !== 'object') return true;
@@ -70,22 +50,16 @@ describe('default config', () => {
   });
 });
 
-describe('startup failures', () => {
-  it('loads cleanly with the real GAME_CONFIG', () => {
-    expect(loadFresh(GAME_CONFIG).DEFAULT_CONFIG).toEqual(DEFAULT_CONFIG);
+describe('startup validity', () => {
+  it('DEFAULT_CONFIG is valid', () => {
+    expect(validateConfig(DEFAULT_CONFIG)).toEqual({ valid: true, errors: [] });
+    expect(() => assertValidConfig(DEFAULT_CONFIG)).not.toThrow();
   });
-
-  it('throws a clear message when GAME_CONFIG is missing', () => {
-    expect(() => loadFresh(undefined)).toThrow('game-config.js not loaded: run npm run sync-config');
-  });
-
-  it('throws naming the rule when the default config is invalid', () => {
-    const bad = JSON.parse(JSON.stringify(GAME_CONFIG));
-    bad.pipes.gapHeight = 20;
-    expect(() => loadFresh(bad)).toThrow(/Invalid Flappy Kiro config[\s\S]*gap\.heightVsHitbox/);
+  it('assertValidConfig throws naming gap.heightVsHitbox for GAP_HEIGHT 20', () => {
+    const bad = buildConfig({ pipes: { GAP_HEIGHT: 20 } });
+    expect(() => assertValidConfig(bad)).toThrow(/Invalid Flappy Kiro config[\s\S]*gap\.heightVsHitbox/);
   });
 });
-
 describe('URL overrides', () => {
   it('applies ?gravity=1500&gapHeight=180', () => {
     const { warnings, log } = collector();
@@ -132,7 +106,7 @@ describe('arbConfig', () => {
         const v = DEFAULT_CONFIG[g][k] * f[n];
         (overrides[g] = overrides[g] || {})[k] = k === 'SPEED_STEP_INTERVAL' ? Math.max(1, Math.round(v)) : v;
       });
-      if (validateConfig(cfgMod.buildConfig(overrides)).valid) valid++;
+      if (validateConfig(buildConfig(overrides)).valid) valid++;
     });
     expect(valid / total).toBeGreaterThan(0.1);
   });

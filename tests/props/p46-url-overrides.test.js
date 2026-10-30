@@ -2,9 +2,7 @@
 // **Validates: Requirements 1.6, 4.4, 4.7, 13.5**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const { loadConfig, buildConfig, validateConfig, TUNABLE, DEFAULT_CONFIG } = require('../../src/config.js');
+import { loadConfig, buildConfig, validateConfig, TUNABLE, DEFAULT_CONFIG } from '../../src/config.js';
 
 const NAMES = Object.keys(TUNABLE);
 

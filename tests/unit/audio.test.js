@@ -1,9 +1,7 @@
 // Validates: Requirements 11.3, 11.4, 19.5, 19.6
 import { describe, it, expect } from 'vitest';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { createAudioPlayer, soundsFor, SOUND_NAMES } = require('../../src/audio.js');
+import { createAudioPlayer, soundsFor, SOUND_NAMES } from '../../src/audio.js';
 
 function fakeEl(opts = {}) {
   const el = {

@@ -1,14 +1,15 @@
-'use strict';
 
 // Generates assets/score.wav: a 16-bit mono PCM chime of about 0.2 s made of
 // two soft sine tones a major third apart (880 Hz, then 1108.73 Hz after 80 ms),
 // following audio-assets.md. Run with: npm run generate-score-wav
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const SAMPLE_RATE = 44100;
-const DURATION_S = 0.2;
+export const SAMPLE_RATE = 44100;
+export const DURATION_S = 0.2;
 const PEAK = Math.pow(10, -14 / 20); // about -14 dBFS
 const ATTACK_S = 0.005;
 const FADE_OUT_S = 0.005; // short tail fade so the file ends at silence
@@ -41,7 +42,7 @@ function buildSamples() {
 }
 
 /** Returns the bytes of the WAV file as a Buffer. Pure: no file access. */
-function buildScoreWav() {
+export function buildScoreWav() {
   const samples = buildSamples();
   const dataSize = samples.length * 2;
   const buf = Buffer.alloc(44 + dataSize);
@@ -64,9 +65,8 @@ function buildScoreWav() {
   return buf;
 }
 
-module.exports = { buildScoreWav, SAMPLE_RATE, DURATION_S };
 
-if (require.main === module) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const out = path.join(__dirname, '..', 'assets', 'score.wav');
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const bytes = buildScoreWav();

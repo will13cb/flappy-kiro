@@ -3,10 +3,8 @@
 // Only the input-module part is tested here (game.js is not involved).
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { mapKey, attachInput } = require('../../src/input.js');
+import { mapKey, attachInput } from '../../src/input.js';
 
 const KEYS = [' ', 'Enter', 'ArrowUp', 'ArrowDown', 'p', 'P', 'Escape', 'm', 'M'];
 const arbKey = fc.constantFrom(...KEYS);

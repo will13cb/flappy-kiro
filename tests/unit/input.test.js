@@ -1,10 +1,8 @@
 // Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.7, 14.3
 import { describe, it, expect, vi } from 'vitest';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { toLogical, mapKey, attachInput } = require('../../src/input.js');
-const { DEFAULT_CONFIG } = require('../../src/config.js');
+import { toLogical, mapKey, attachInput } from '../../src/input.js';
+import { DEFAULT_CONFIG } from '../../src/config.js';
 
 function makeTarget(extra = {}) {
   const listeners = [];

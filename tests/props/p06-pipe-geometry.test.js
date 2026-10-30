@@ -2,11 +2,9 @@
 // **Validates: Requirements 4.3, 4.4, 6.2**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig, arbPipe } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { pipeRects } = require('../../src/pipes.js');
+import { pipeRects } from '../../src/pipes.js';
 
 const arbCfgAndPipe = arbConfig.chain((cfg) => fc.tuple(fc.constant(cfg), arbPipe(cfg)));
 

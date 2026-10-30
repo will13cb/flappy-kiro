@@ -2,7 +2,6 @@
 // **Validates: Requirements 16.2, 16.4**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import {
   arbScore,
   arbStorageString,
@@ -10,8 +9,7 @@ import {
   createThrowingStorage,
 } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { HIGH_SCORE_KEY, parseHighScore, load, save, recordIfHigher } = require('../../src/scoreStore.js');
+import { HIGH_SCORE_KEY, parseHighScore, load, save, recordIfHigher } from '../../src/scoreStore.js';
 
 const arbSafeInt = fc.integer({ min: 0, max: Number.MAX_SAFE_INTEGER });
 

@@ -2,12 +2,10 @@
 // **Validates: Requirements 4.8, 4.11, 9.6**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbAnyConfig, arbDt, rng } from '../helpers/arbitraries.js';
 import { arbGameState } from '../helpers/game-arbs.js';
 
-const require = createRequire(import.meta.url);
-const { update } = require('../../src/game.js');
+import { update } from '../../src/game.js';
 
 const EPS = 1e-6;
 

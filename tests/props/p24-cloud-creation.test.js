@@ -2,11 +2,9 @@
 // **Validates: Requirements 13.2, 13.3, 13.4, 13.5**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig, rng } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { createClouds } = require('../../src/clouds.js');
+import { createClouds } from '../../src/clouds.js';
 
 describe('Property 24: cloud creation rules', () => {
   it('creates clouds with valid alpha, speed range, position and layer fields', () => {

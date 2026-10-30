@@ -2,13 +2,11 @@
 // **Validates: Requirements 18.3**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { DEFAULT_CONFIG as cfg, rng } from '../helpers/arbitraries.js';
 import { arbGameState } from '../helpers/game-arbs.js';
 
-const require = createRequire(import.meta.url);
-const { handleInput, startRound } = require('../../src/game.js');
-const { currentFrame } = require('../../src/animation.js');
+import { handleInput, startRound } from '../../src/game.js';
+import { currentFrame } from '../../src/animation.js';
 
 const arbFlapMs = fc.oneof(
   fc.constant(null),

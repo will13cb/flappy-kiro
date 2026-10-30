@@ -2,10 +2,8 @@
 // **Validates: Requirements 3.5, 3.7**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { tiltFor } = require('../../src/physics.js');
+import { tiltFor } from '../../src/physics.js';
 
 const arbVy = fc.double({ min: -5000, max: 5000, noNaN: true });
 

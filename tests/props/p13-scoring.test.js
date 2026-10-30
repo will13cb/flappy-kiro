@@ -2,12 +2,10 @@
 // **Validates: Requirements 5.1, 5.4, 5.5**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig, arbPipes, arbDt, rng } from '../helpers/arbitraries.js';
 import { buildState } from '../helpers/game-arbs.js';
 
-const require = createRequire(import.meta.url);
-const { update } = require('../../src/game.js');
+import { update } from '../../src/game.js';
 
 const arbCase = arbConfig.chain((cfg) =>
   fc.record({

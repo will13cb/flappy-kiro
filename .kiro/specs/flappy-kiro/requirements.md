@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Flappy Kiro is a retro, browser-based endless scroller. The player guides a ghost character (Ghosty) through gaps in a continuous series of walls, where each wall is a Pipe_Pair. The Ghost falls under gravity and rises when the player triggers a jump. The game uses the workspace assets: `assets/ghosty.png` (ghost sprite), `assets/jump.wav` (flap sound), `assets/score.wav` (score sound) and `assets/game_over.wav` (collision sound). Tunable gameplay values are read from `game-config.json`, and the Ghost sprite, audio and menu details follow `ghosty-sprites.md`, `audio-assets.md` and `ui-mockups.md`. The visual style follows the reference screenshot at `img/example-ui.png`, interpreted as a retro pixel-style look with a score display, scrolling pipes and a ghost sprite.
+Flappy Kiro is a retro, browser-based endless scroller. The player guides a ghost character (Ghosty) through gaps in a continuous series of walls, where each wall is a Pipe_Pair. The Ghost falls under gravity and rises when the player triggers a jump. The game uses the workspace assets: `assets/ghosty.png` (ghost sprite), `assets/jump.wav` (flap sound), `assets/score.wav` (score sound) and `assets/game_over.wav` (collision sound). Tunable gameplay values are defined in `src/config.js`, and the Ghost sprite, audio and menu details follow `ghosty-sprites.md`, `audio-assets.md` and `ui-mockups.md`. The visual style follows the reference screenshot at `img/example-ui.png`, interpreted as a retro pixel-style look with a score display, scrolling pipes and a ghost sprite.
 
 The game is organized into four Game_States: Main_Menu, Playing, Paused and Game_Over. The Main_Menu shows the title, the High_Score, a start prompt, a PLAY button and a HIGH SCORES button. The Playing state shows the Score in real time. The player can pause and resume a round. The Game_Over screen shows the final result and offers a restart. The High_Score persists in browser local storage.
 
@@ -45,7 +45,7 @@ All distances are logical pixels of the Play_Area (480 wide by 640 high). All sp
 - **Invincibility_Period**: The 1500 millisecond period after a round starts during which collisions between the Ghost and pipes are ignored.
 - **Crash_Animation**: The 500 millisecond animation at the start of Game_Over in which the Ghost flashes and falls before the game over overlay appears.
 - **Audio_Player**: The component that plays `assets/jump.wav` (flap sound), `assets/score.wav` (score sound) and `assets/game_over.wav` (collision sound).
-- **Game_Config**: The file `game-config.json` that holds the tunable gameplay values cited in this document.
+- **Game_Config**: The single plain object in `src/config.js` that holds the base gameplay values cited in this document.
 - **Menu_Button**: An on-screen button, one of PLAY, HIGH SCORES, BACK or RESTART, that the player activates with the mouse, a touch, or the Space or Enter key while the button is selected.
 - **High_Scores_Panel**: The Main_Menu panel that shows the stored High_Score as "BEST: N" and a BACK Menu_Button.
 - **Ghost_Animation**: One of the idle, flap or death frame sequences of the Ghost, defined in Requirement 18.
@@ -63,12 +63,12 @@ All distances are logical pixels of the Play_Area (480 wide by 640 high). All sp
 
 #### Acceptance Criteria
 
-1. THE Game SHALL run in a web browser from static files without a server-side component.
+1. THE Game SHALL run in a web browser from static files served over HTTP (not `file://`, because the code is loaded as ES modules) without a server-side component.
 2. WHEN the page finishes loading, THE Game SHALL display the Play_Area in the Main_Menu Game_State.
 3. WHEN the page finishes loading, THE Game SHALL load `assets/ghosty.png`, `assets/jump.wav`, `assets/score.wav` and `assets/game_over.wav` from the `assets` directory.
 4. IF an asset fails to load, THEN THE Game SHALL continue to run and SHALL display a placeholder shape in place of a missing sprite.
 5. IF an asset fails to load, THEN THE Game SHALL replace only the failed asset with a placeholder shape or silence, and THE Game SHALL load and use every other asset normally.
-6. WHEN the page finishes loading, THE Game SHALL read the tunable gameplay values cited in this document from the Game_Config.
+6. WHEN the page finishes loading, THE Game SHALL read the tunable gameplay values cited in this document from the Game_Config in `src/config.js`.
 7. IF `assets/ghosty.png` fails to load, THEN THE Renderer SHALL draw a 24 by 24 white square centered on the Ghost center as the placeholder.
 
 ### Requirement 2: Main Menu and Starting a Round
@@ -333,8 +333,8 @@ All distances are logical pixels of the Play_Area (480 wide by 640 high). All sp
 #### Acceptance Criteria
 
 1. WHEN the Score increases, THE Audio_Player SHALL play `assets/score.wav`, a pleasant chime of about 0.2 seconds.
-2. THE Audio_Player SHALL use `assets/jump.wav` as a short whoosh of about 0.1 seconds for the flap sound.
-3. THE Audio_Player SHALL use `assets/game_over.wav` as a soft thud of about 0.3 seconds for the collision sound.
+2. THE Audio_Player SHALL use `assets/jump.wav` as the provided flap recording, kept at its original length.
+3. THE Audio_Player SHALL use `assets/game_over.wav` as the provided collision recording (a spoken "game over"), kept at its original length.
 4. WHILE sound is muted, THE Audio_Player SHALL not play `assets/score.wav`.
 5. IF the browser blocks audio playback, THEN THE Game SHALL continue to run without playing `assets/score.wav`.
 6. IF `assets/score.wav` fails to load, THEN THE Game SHALL play no score sound and SHALL continue to play every other sound normally.

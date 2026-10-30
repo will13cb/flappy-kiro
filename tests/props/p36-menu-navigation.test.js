@@ -5,10 +5,8 @@
 // per-mode navigation, so that part is left to the game tests.
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { initialMenu, navigate, activate, buttonsFor } = require('../../src/menu.js');
+import { initialMenu, navigate, activate, buttonsFor } from '../../src/menu.js';
 
 const arbDir = fc.constantFrom('up', 'down');
 const opposite = (d) => (d === 'up' ? 'down' : 'up');

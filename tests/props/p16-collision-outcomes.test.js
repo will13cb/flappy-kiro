@@ -2,14 +2,12 @@
 // **Validates: Requirements 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.9, 7.10, 15.6**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig, arbDt, arbGhost, arbPipes, rng } from '../helpers/arbitraries.js';
 import { arbGameState } from '../helpers/game-arbs.js';
 
-const require = createRequire(import.meta.url);
-const collision = require('../../src/collision.js');
-const { pipeRects } = require('../../src/pipes.js');
-const { update } = require('../../src/game.js');
+import * as collision from '../../src/collision.js';
+import { pipeRects } from '../../src/pipes.js';
+import { update } from '../../src/game.js';
 
 // Independent oracle for the pipe test.
 function expectedPipeHit(cfg, ghost, pairs) {

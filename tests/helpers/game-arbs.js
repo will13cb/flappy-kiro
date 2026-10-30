@@ -1,19 +1,17 @@
 // Game-level fast-check generators and a runner for Flappy Kiro tests.
 // handleInput and update are looked up at call time, so this module loads before they exist.
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { DEFAULT_CONFIG, arbGhost, arbPipes, arbScore, arbDt, rng } from './arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const menu = require('../../src/menu.js');
+import * as menu from '../../src/menu.js';
+import * as game from '../../src/game.js';
 
 export const MODES = ['Main_Menu', 'Playing', 'Paused', 'Game_Over'];
 export const BUTTON_NAMES = ['PLAY', 'HIGH_SCORES', 'BACK', 'RESTART'];
 export const ICON_NAMES = ['MUTE', 'PAUSE'];
 
-// Resolved when called, never at import time.
 function gameApi() {
-  return require('../../src/game.js');
+  return game;
 }
 
 // Every control rectangle from the config: { name, x, y, w, h }.
@@ -173,7 +171,7 @@ export function arbSteps(cfg = DEFAULT_CONFIG, maxLength = 40) {
 //   events: every event emitted, in order
 export function runSteps(state, steps, seed = 1) {
   const { handleInput, update } = gameApi();
-  const deps = { cfg: state.cfg, rng: rng(seed) };
+  const deps = { rng: rng(seed) };
   const log = [];
   const transitions = [];
   const events = [];

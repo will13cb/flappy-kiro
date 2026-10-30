@@ -2,11 +2,9 @@
 // **Validates: Requirements 4.12**
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { createRequire } from 'module';
 import { arbConfig } from '../helpers/arbitraries.js';
 
-const require = createRequire(import.meta.url);
-const { removeOffscreen, movePairs } = require('../../src/pipes.js');
+import { removeOffscreen, movePairs } from '../../src/pipes.js';
 
 // Pairs with x spread around the removal threshold so both branches are hit.
 const arbPair = (cfg) =>

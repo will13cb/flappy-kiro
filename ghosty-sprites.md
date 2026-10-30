@@ -2,7 +2,7 @@
 
 ## Overview
 
-Ghosty is the player character. This document defines the sprite size, animation states and hitbox. Values match `game-config.json` (`ghost.spriteSize`, `ghost.hitboxRadius`).
+Ghosty is the player character. This document defines the sprite size, animation states and hitbox. Values match `src/config.js` (`ghost.SPRITE_SIZE`, `ghost.HITBOX_RADIUS`).
 
 ## Source asset
 
@@ -73,4 +73,4 @@ Choose one:
 
 ## Notes on consistency with the spec
 
-The spec currently defines a 48 x 48 px sprite and a 32 x 32 px square hitbox. This document uses 32 x 32 px and a 12 px circle as requested, so the requirements and design are aligned to this document. `game-config.json` already uses these values.
+The spec currently defines a 48 x 48 px sprite and a 32 x 32 px square hitbox. This document uses 32 x 32 px and a 12 px circle as requested, so the requirements and design are aligned to this document. `src/config.js` already uses these values.

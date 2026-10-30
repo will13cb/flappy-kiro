@@ -2,42 +2,35 @@
 
 ## Overview
 
-Flappy Kiro is built in plain JavaScript as classic scripts sharing a global `FlappyKiro` namespace, so it runs from `file://` with no build step. Tunable values live in the workspace-root `game-config.json`; a small script generates `src/game-config.js` from it so the page can load it synchronously. The plan starts with project setup, the config sync and the config module, then builds the pure logic core (physics, pipes, collision with a circle hitbox, clouds, animation, menu, score store, game state machine), then the browser shell (audio including the score sound, assets, input with pointer mapping, renderer, `index.html`, main loop). Every logic module also exports through `module.exports` so vitest and fast-check can test it in Node. Each property-based test lives in its own file under `tests/props/` and reads all expected numbers from the config in use. All 47 correctness properties of the design are covered by one optional test sub-task each.
+Flappy Kiro is built in plain JavaScript as plain ES modules (`"type": "module"`) loaded by one `<script type="module">`, so it needs no build step but must be served over HTTP. Base values live in one plain object in `src/config.js`. The plan starts with project setup and the config module, then builds the pure logic core (physics, pipes, collision with a circle hitbox, clouds, animation, menu, score store, game state machine), then the browser shell (audio including the score sound, assets, input with pointer mapping, renderer, `index.html`, main loop). vitest and fast-check import the same modules in Node. Each property-based test lives in its own file under `tests/props/` and reads all expected numbers from the config in use. All 47 correctness properties of the design are covered by one optional test sub-task each.
 
 ## Tasks
 
 - [x] 1. Project setup for testing
   - [x] 1.1 Create `package.json`, vitest config and `.gitignore` entry
     - Create `package.json` (dev dependencies only) with `vitest` and `fast-check` pinned to exact versions (no `^` or `~`)
-    - Add scripts: `test` (`vitest --run`), `sync-config` (`node scripts/sync-config.js`) and `generate-score-wav` (`node scripts/generate-score-wav.js`)
+    - Add scripts: `test` (`vitest --run`) and `generate-score-wav` (`node scripts/generate-score-wav.js`)
     - Add `vitest.config.js` with the Node environment and `tests/**/*.test.js` include pattern
     - Ensure `node_modules` is listed in `.gitignore`
     - _Requirements: 1.1_
 
-- [x] 2. Config source and sync
-  - [x] 2.1 Implement `scripts/sync-config.js` and generate `src/game-config.js`
-    - Read `game-config.json` from the workspace root and write `src/game-config.js` containing only the parsed JSON assigned to `FlappyKiro.GAME_CONFIG` (and to `module.exports` in Node), with a "GENERATED, do not edit" header
-    - Export a pure `renderConfigScript(json)` function so a test can reproduce the file content without touching the real file
-    - Run the script once to create `src/game-config.js`
-    - _Requirements: 1.1, 1.6_
-
-  - [x] 2.2 Write parity test for the generated config
-    - Create `tests/unit/config-parity.test.js`
-    - Check that `GAME_CONFIG` from `src/game-config.js` deep-equals the parsed `game-config.json`, and that `renderConfigScript` reproduces `src/game-config.js` byte for byte
-    - _Requirements: 1.6_
-
+- [x] 2. Config source and sync (removed: config now inline)
+  - [x] 2.1 Implement `scripts/sync-config.js` and generate `src/game-config.js` (removed: config now inline)
+    - Obsolete: there is no `game-config.json`, `src/game-config.js` or sync script; the base values are one plain object in `src/config.js`
+  - [x] 2.2 Write parity test for the generated config (removed: config now inline)
+    - Obsolete: `tests/unit/config-parity.test.js` does not exist
 - [x] 3. Implement config module (`src/config.js`)
   - [x] 3.1 Implement mapping, extra base values, derived values and `buildConfig`
-    - Write `mapJson(json)` (camelCase JSON to UPPER_SNAKE groups per the design table, ignoring `_comment`, reporting a missing key by path) and its inverse `unmapJson(base)`
-    - Write `EXTRA_BASE` with the `ui` group (button, panel and icon geometry) and the `animation` group (`IDLE_FRAMES`, `FLAP_FRAMES`, `DEATH_FRAMES`, `DEATH_FINAL`, `SHEET_FILE`)
+    - Keep the base values in one plain `BASE` object (`mapJson` and `unmapJson` were removed: config now inline)
+    - Include in `BASE` the `ui` group (button, panel and icon geometry) and the `animation` group (`IDLE_FRAMES`, `FLAP_FRAMES`, `DEATH_FRAMES`, `DEATH_FINAL`, `SHEET_FILE`)
     - Write `derive(base)` computing `GROUND_TOP`, `MENU_GHOST_Y`, `JUMP_SPEED`, `HITBOX_MARGIN`, `CAP_INSET`, `GAP_CENTER_MIN`, `GAP_CENTER_MAX`, `SPAWN_X`, `MAX_DT`, `DEATH_FRAME_MS`, `LAYER_SPEEDS`, `BUTTON_X`, `MENU_STACK_BOTTOM`, `MUTE_ICON_X`, `PAUSE_ICON_X`, `ICON_Y`, `IDLE_TOTAL_MS`, `FLAP_TOTAL_MS` and `DEATH_TOTAL_MS`
     - Write the `TUNABLE` whitelist (gravity, jumpVelocity, hitboxRadius, gapHeight, gapMargin, pipeSpacing, maxGapShift, wallSpeed, speedIncrement, speedStepInterval, maxSpeed, invincibilityMs, crashMs, lockoutMs, cloudSpeedMin, cloudSpeedMax) and `buildConfig(overrides)` that ignores derived keys and deep-freezes every group
-    - Read `FlappyKiro.GAME_CONFIG` (or `require('./game-config')` in Node); throw `game-config.js not loaded: run npm run sync-config` when it is missing
-    - Attach to `FlappyKiro` in the browser and to `module.exports` in Node
+    - Export `DEFAULT_CONFIG` (removed: reading `GAME_CONFIG`, config now inline)
+    - Use plain ES `export` (removed: `FlappyKiro` and `module.exports` attachment)
     - _Requirements: 1.6, 4.5, 6.1, 6.3, 13.5, 17.1_
 
   - [x] 3.2 Implement `validateConfig` and `assertValidConfig`
-    - Implement every rule in the design table: `number.finite`, `ghost.shape`, `ghost.radiusFits`, `ghost.jumpUp`, `ghost.insideWorld`, `pipes.capCoversBody`, `pipes.spacing`, `gap.heightVsHitbox` (`GAP_HEIGHT > 2 * HITBOX_RADIUS`), `gap.fitsAboveGround`, `gap.shiftPositive`, `speed.order`, `reach.fall`, `reach.climb`, `clouds.order`, `clouds.belowScroll`, `clouds.layers`, `timing.positive`, `anim.tables`, `anim.deathFitsCrash`, `ui.fits`
+    - Implement the rules in the design table (only those a tunable can break): `number.finite`, `ghost.radiusFits`, `ghost.jumpUp`, `pipes.spacing`, `gap.heightVsHitbox` (`GAP_HEIGHT > 2 * HITBOX_RADIUS`), `gap.capFits` (`GAP_MARGIN >= CAP_HEIGHT`), `gap.fitsAboveGround`, `speed.order`, `reach.fall`, `reach.climb`, `clouds.order`, `clouds.belowScroll`, `timing.positive`, `anim.deathFitsCrash`
     - Collect all violations, each prefixed with its stable rule id
     - `assertValidConfig` throws `Invalid Flappy Kiro config:` followed by one line per error
     - Define `DEFAULT_CONFIG = buildConfig({})` and assert it is valid at module load
@@ -65,7 +58,7 @@ Flappy Kiro is built in plain JavaScript as classic scripts sharing a global `Fl
     - Include a check that derived keys passed as overrides are ignored and that the config is frozen at every level
     - **Validates: Requirements 4.5, 6.1, 6.3, 13.5, 17.1**
 
-  - [x] 3.7 Write property test for JSON mapping round trip
+  - [x] 3.7 Write property test for JSON mapping round trip (removed: config now inline)
     - Create `tests/props/p45-json-mapping.test.js`
     - **Property 45: JSON mapping round trip**
     - Generate JSON-shaped objects with the structure of `game-config.json`, including a `_comment` key that must be ignored
@@ -79,7 +72,7 @@ Flappy Kiro is built in plain JavaScript as classic scripts sharing a global `Fl
 
   - [x] 3.9 Write unit tests for config
     - Create `tests/unit/config.test.js`
-    - Cover: default config is valid and deeply frozen; default values match the requirements (gravity 800, jump velocity -300, wall speed 120, gap height 140, pipe spacing 350, max gap shift 160, max speed 240, sprite size 32, hitbox radius 12); reachability gives 3 jumps, 1.125 s climb and about 0.632 s fall, both below `350 / 240`; missing `GAME_CONFIG` and an invalid default make startup throw with a clear message; `?gravity=1500&gapHeight=180` applies; `?gravity=abc`, `?gravity=` and `?foo=1` are ignored with a warning; `?gapHeight=20` falls back to defaults with a warning naming `gap.heightVsHitbox`; `arbConfig` rejects few candidates
+    - Cover: default config is valid and deeply frozen; default values match the requirements (gravity 800, jump velocity -300, wall speed 120, gap height 140, pipe spacing 350, max gap shift 160, max speed 240, sprite size 32, hitbox radius 12); reachability gives 3 jumps, 1.125 s climb and about 0.632 s fall, both below `350 / 240`; an invalid default makes `assertValidConfig` throw with a clear message; `?gravity=1500&gapHeight=180` applies; `?gravity=abc`, `?gravity=` and `?foo=1` are ignored with a warning; `?gapHeight=20` falls back to defaults with a warning naming `gap.heightVsHitbox`; `arbConfig` rejects few candidates
     - _Requirements: 4.4, 4.7, 1.6_
 
 - [x] 4. Implement physics (`src/physics.js`)
@@ -140,7 +133,7 @@ Flappy Kiro is built in plain JavaScript as classic scripts sharing a global `Fl
 
 - [x] 6. Implement collision detection (`src/collision.js`)
   - [x] 6.1 Implement circle hitbox and nearest-point tests
-    - `ghostCircle`, `nearestPoint`, `distanceSqToRect`, `circleHitsRect` (strict: distance squared below radius squared), `hitsPipe` (union of body and cap), `hitsGround` (`y + HITBOX_RADIUS >= GROUND_TOP`), `hitsCeiling` (`y - HITBOX_RADIUS <= 0`), `detect(cfg, ghost, pairs, invincible)`
+    - `ghostCircle`, `nearestPoint`, `distanceSqToRect`, `circleHitsRect` (strict: distance squared below radius squared), `hitsPipe` (reuses `pipes.pipeRects`, skips zero-size rects), `hitsGround` (`y + HITBOX_RADIUS >= GROUND_TOP`), `hitsCeiling` (`y - HITBOX_RADIUS <= 0`), `detect(cfg, ghost, pairs, invincible)`
     - A center inside a rectangle has distance 0; the margin outside the circle takes no part in any test; the pipe test is skipped when invincible while ground and ceiling are always tested
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 6.10, 6.11, 7.9, 7.10_
 
@@ -308,48 +301,48 @@ Flappy Kiro is built in plain JavaScript as classic scripts sharing a global `Fl
     - **Property 21: State machine only takes permitted transitions**
     - **Validates: Requirements 10.6, 12.3, 14.1, 14.2, 14.8, 15.2, 15.3, 15.4, 15.5, 15.8, 15.9, 17.5, 17.6**
 
-  - [ ] 12.15 Write property test for flap restart
+  - [x] 12.15 Write property test for flap restart
     - Create `tests/props/p31-flap-restart.test.js`
     - **Property 31: Flap restarts on every jump**
     - **Validates: Requirements 18.3**
 
-  - [ ] 12.16 Write property test for score events
+  - [ ] 12.16 Write property test for score events (skipped, not executed)
     - Create `tests/props/p34-score-events.test.js`
     - **Property 34: One score event per score increase**
     - **Validates: Requirements 5.1, 19.1, 19.7**
 
-  - [ ] 12.17 Write property test for menu activation
+  - [ ] 12.17 Write property test for menu activation (skipped, not executed)
     - Create `tests/props/p37-menu-activation.test.js`
     - **Property 37: Menu activation by Space, Enter or pointer**
     - **Validates: Requirements 10.7, 17.4, 17.5, 17.6**
 
-  - [ ] 12.18 Write property test for the panel ignoring other input
+  - [ ] 12.18 Write property test for the panel ignoring other input (skipped, not executed)
     - Create `tests/props/p38-panel-ignores-input.test.js`
     - **Property 38: Panel ignores other input**
     - **Validates: Requirements 17.7**
 
-  - [ ] 12.19 Write property test for the pause icon
+  - [ ] 12.19 Write property test for the pause icon (skipped, not executed)
     - Create `tests/props/p41-pause-icon.test.js`
     - **Property 41: Pause icon is equivalent to Pause_Input**
     - **Validates: Requirements 14.3, 17.8**
 
-  - [ ] 12.20 Write property test for RESTART
+  - [ ] 12.20 Write property test for RESTART (skipped, not executed)
     - Create `tests/props/p42-restart-equivalence.test.js`
     - **Property 42: RESTART is equivalent to Jump_Input**
     - **Validates: Requirements 17.12, 17.13, 8.1, 8.2**
 
-  - [ ] 12.21 Write property test for behavior across valid configs
+  - [ ] 12.21 Write property test for behavior across valid configs (skipped, not executed)
     - Create `tests/props/p47-valid-config-variations.test.js`
     - **Property 47: Gameplay behavior holds for any valid config**
     - Re-run the pipe, collision, scoring, lockout and animation properties against `arbConfig` and check that a circle placed at a chosen gap center does not collide and fits inside the gap
     - **Validates: Requirements 4.4, 4.5, 4.6, 5.1, 6.1, 6.6, 6.7, 6.8, 6.9, 6.10**
 
-  - [ ] 12.22 Write unit tests for game
+  - [ ] 12.22 Write unit tests for game (skipped, not executed)
     - Create `tests/unit/game.test.js`
     - Cover: initial state is Main_Menu with PLAY selected and empty storage reading 0; clouds do not affect score or collisions; first frame delta after a hidden tab is small; Enter on the selected button in Main_Menu does not act as a jump
     - _Requirements: 1.2, 2.4, 12.4, 13.9, 13.10, 15.1, 17.2_
 
-- [ ] 13. Checkpoint - Ensure all tests pass
+- [ ] 13. Checkpoint - Ensure all tests pass (skipped, not executed)
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 14. Implement audio (`src/audio.js`)
@@ -363,7 +356,7 @@ Flappy Kiro is built in plain JavaScript as classic scripts sharing a global `Fl
     - **Property 23: Mute suppresses every sound**
     - **Validates: Requirements 11.2, 11.4, 19.4**
 
-  - [ ] 14.3 Write property test for event to sound mapping
+  - [ ] 14.3 Write property test for event to sound mapping (skipped, not executed)
     - Create `tests/props/p35-events-to-sounds.test.js`
     - **Property 35: Events map one to one onto sounds**
     - **Validates: Requirements 3.3, 7.1, 8.3, 19.1**
@@ -439,22 +432,22 @@ Flappy Kiro is built in plain JavaScript as classic scripts sharing a global `Fl
   - [x] 18.1 Create `index.html`
     - Canvas 480 by 640 with CSS scaling and `image-rendering: pixelated`
     - Three audio elements for `assets/jump.wav`, `assets/score.wav` and `assets/game_over.wav`
-    - Classic `<script>` tags in dependency order with `src/game-config.js` loaded before `src/config.js` (no ES modules, no network requests)
+    - A single `<script type="module" src="src/main.js">` (no classic scripts or `FlappyKiro` namespace; must be served over HTTP; no network requests)
     - An element where a startup config error message can be shown in place of the canvas
     - _Requirements: 1.1, 1.3, 1.6, 9.1, 9.5, 11.1, 19.1_
 
   - [x] 18.2 Implement `src/main.js` loop and wiring
-    - Call `loadConfig(location.search, console)`; on a thrown config error show the message in place of the canvas
+    - Call `loadConfig(location.search, console)` (`startApp` takes no `deps.modules` override); on a thrown config error show the message in place of the canvas
     - Create the game with the stored High_Score, run the `requestAnimationFrame` loop with `dt = clampDt(...)`, reset the last timestamp when the tab becomes visible
     - Route input to `handleInput`; play sounds from `soundsFor(events)`; handle `toggleMute` events; on `gameOver` call `recordIfHigher`; render every frame
     - _Requirements: 1.2, 3.3, 7.1, 8.3, 11.1, 12.1, 12.4, 12.5, 16.1, 16.2, 19.1_
 
-  - [ ] 18.3 Write integration tests for the main loop wiring
+  - [ ] 18.3 Write integration tests for the main loop wiring (skipped, not executed)
     - Create `tests/unit/main-wiring.test.js`
     - With mocked storage, audio and canvas, simulate a start, a score, a crash and a restart; check one jump sound per jump, one score sound per score, one game over sound per crash, and High_Score saved only when higher
     - _Requirements: 3.3, 7.1, 8.3, 16.1, 16.5, 19.1_
 
-- [ ] 19. Final checkpoint - Ensure all tests pass
+- [ ] 19. Final checkpoint - Ensure all tests pass (skipped, not executed)
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
@@ -465,8 +458,9 @@ Flappy Kiro is built in plain JavaScript as classic scripts sharing a global `Fl
 - Property tests validate universal correctness properties (all 47 are covered) and run at least 100 iterations each, tagged `Feature: flappy-kiro, Property N: ...`
 - Property tests read every expected value from the config in use and contain no literal copies of config numbers
 - Each property test has its own file under `tests/props/` so tasks in the same wave never write the same file
-- After editing `game-config.json`, run `npm run sync-config` to regenerate `src/game-config.js`
+- Base values are edited directly in `src/config.js`; the old `game-config.json` and `sync-config` flow was removed
 - Unit tests validate specific examples and edge cases
+- Skipped, not executed (left unchecked): 12.16 to 12.22, 14.3, 18.3 and checkpoints 13 and 19
 
 ## Task Dependency Graph
 
