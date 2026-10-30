@@ -60,3 +60,4 @@ data/
 tests/.tmp-*
 assets/generated/
 _site/
+scripts/.chrome-tmp/
