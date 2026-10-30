@@ -21,6 +21,7 @@ const PERMITTED = new Set([
   'Paused>Playing',
   'Playing>Game_Over',
   'Game_Over>Playing',
+  'Game_Over>Main_Menu',
 ]);
 
 const send = (state, input) => handleInput(state, input, { rng: rng(1) });
@@ -40,7 +41,7 @@ const arbJump = fc.oneof(
 );
 
 describe('Property 21: state machine only takes permitted transitions', () => {
-  it('every observed mode change is one of the five permitted transitions', () => {
+  it('every observed mode change is one of the six permitted transitions', () => {
     fc.assert(
       fc.property(arbAnyGameState(cfg), arbSteps(cfg, 40), fc.integer({ min: 1, max: 1000 }), (state, steps, seed) => {
         const { transitions } = runSteps(state, steps, seed);

@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { DEFAULT_CONFIG as cfg, rng } from '../helpers/arbitraries.js';
-import { buildState, arbPointerInput } from '../helpers/game-arbs.js';
+import { buildState, arbPointerInput, controlRects } from '../helpers/game-arbs.js';
 
 import { update, handleInput } from '../../src/game.js';
 
@@ -15,6 +15,10 @@ const arbJumpInput = fc.oneof(
   fc.constantFrom('space', 'enter').map((kind) => ({ kind })),
   arbPointerInput(cfg)
 );
+const menuRect = controlRects(cfg).find((r) => r.name === 'MENU');
+const onMenu = (p) => p.x >= menuRect.x && p.x < menuRect.x + menuRect.w && p.y >= menuRect.y && p.y < menuRect.y + menuRect.h;
+// Inputs that restart once unlocked: everything except a pointer on MENU.
+const arbRestartInput = arbJumpInput.filter((i) => i.kind !== 'pointer' || !onMenu(i));
 
 // A Game_Over state that has just begun, aged by `elapsed` whole ms in frames of at most MAX_DT.
 const ageGameOver = (seed, elapsed, chunks) => {
@@ -63,7 +67,7 @@ describe('Property 20: game over input lockout', () => {
         arbSeed,
         fc.integer({ min: LOCKOUT, max: LOCKOUT * 3 }),
         arbChunk,
-        arbJumpInput,
+        arbRestartInput,
         (seed, elapsed, chunk, input) => {
           const state = ageGameOver(seed, elapsed, chunk);
           expect(state.mode).toBe('Game_Over');
@@ -74,6 +78,23 @@ describe('Property 20: game over input lockout', () => {
         }
       ),
       { numRuns: 100 }
+    );
+  });
+  it('keeps the panel readable: input unlocks after the panel appears', () => {
+    expect(cfg.timing.LOCKOUT_MS).toBeGreaterThan(cfg.timing.CRASH_MS);
+  });
+  it('a pointer on MENU leaves for Main_Menu once unlocked, and is ignored before', () => {
+    fc.assert(
+      fc.property(arbSeed, arbChunk, (seed, chunk) => {
+        const input = { kind: 'pointer', x: menuRect.x + 1, y: menuRect.y + 1 };
+        const locked = ageGameOver(seed, LOCKOUT - 1, chunk);
+        handleInput(locked, input, { rng: rng(seed) });
+        expect(locked.mode).toBe('Game_Over');
+        const open = ageGameOver(seed, LOCKOUT, chunk);
+        expect(handleInput(open, input, { rng: rng(seed) })).toEqual([]);
+        expect(open.mode).toBe('Main_Menu');
+      }),
+      { numRuns: 50 }
     );
   });
 });

@@ -7,7 +7,7 @@
 import { loadConfig } from './config.js';
 import { clampDt } from './physics.js';
 import { createGame, handleInput, update } from './game.js';
-import { load as loadHighScore, recordIfHigher } from './scoreStore.js';
+import { load as loadHighScore, loadTop, recordIfHigher, recordTop } from './scoreStore.js';
 import { createAudioPlayer, soundsFor, musicFor } from './audio.js';
 import { loadAssets } from './assets.js';
 import { attachInput } from './input.js';
@@ -53,7 +53,9 @@ export function startApp(opts) {
     return { error: e, message };
   }
 
-  const state = createGame(cfg, loadHighScore(storage), rng);
+  const topScores = loadTop(storage);
+  // BEST is the larger of the legacy single score and the top of the list.
+  const state = createGame(cfg, Math.max(loadHighScore(storage), topScores[0] || 0), rng, topScores);
   const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
 
   const assets = { sprite: null, sheet: null };
@@ -103,6 +105,7 @@ export function startApp(opts) {
         audio.toggleMute();
       } else if (ev.type === 'gameOver') {
         state.highScore = recordIfHigher(storage, ev.score, state.highScore);
+        state.topScores = recordTop(storage, ev.score, state.topScores);
       }
     });
   }

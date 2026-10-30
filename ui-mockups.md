@@ -26,7 +26,7 @@ All screens use the 480 x 640 logical canvas and the pixel font `"Press Start 2P
 
 - Buttons are 200 x 44 px, centered horizontally, 16 px apart.
 - PLAY starts a round (same as a Jump_Input on the menu).
-- HIGH SCORES opens a panel showing the stored High_Score. Only one value is stored today, so the panel shows "BEST: N" and a BACK button. Storing a list of scores would need a new requirement.
+- HIGH SCORES opens a panel with the local top 5 (ranked "1. N" to "5. N", "No scores yet" when empty) and a BACK button. The list is stored under `flappyKiro.topScores`.
 - Selected button is highlighted with a white border; keyboard: Up/Down to move, Space or Enter to activate.
 - Sound toggle icon (top right, 32 x 32 px) and pause icon are hidden on the menu.
 
@@ -67,31 +67,35 @@ All screens use the 480 x 640 logical canvas and the pixel font `"Press Start 2P
 - The scene is frozen and dimmed with a 50% black layer. The score stays visible.
 
 ## 4. Game over screen
-
 ```
 +------------------------------------------+
 |          (dimmed game scene)             |
-|                                          |
-|              GAME OVER                   |  y = 160
-|                                          |
+|              GAME OVER                   |  y = 80
 |     +--------------------------+         |
-|     |  SCORE            12     |         |  panel, y = 220 to 340
+|     |  SCORE            12     |         |  panel, y = 110 to 380
 |     |  BEST             27     |         |
 |     |  NEW BEST!               |         |  only on a new high score
+|     |          TOP 5           |         |
+|     |          1. 27           |         |  rows from y = 254, 22 px apart
+|     |          2. 12           |         |
+|     |          3. 9            |         |
 |     +--------------------------+         |
-|                                          |
 |             +------------+               |
 |             |  RESTART   |               |  button, y = 400
 |             +------------+               |
-|        Press SPACE or tap to restart     |  hint, y = 460
+|             +------------+               |
+|             |    MENU    |               |  button, y = 460
+|             +------------+               |
+|   SPACE/ENTER to select, UP/DOWN to move |  hint, y = 530
+|==========================================|  ground, y = 560
 +------------------------------------------+
 ```
-
 - The overlay appears after the 500 ms crash animation ends.
-- Final score and best score are right-aligned inside the panel.
-- RESTART and Space/tap input are ignored for 500 ms after the game over starts, to avoid accidental restarts.
+- Final score and best score are right-aligned inside the panel. With no scores the list shows "No scores yet".
+- Input is ignored for 1000 ms after the game over starts, so the panel is readable for 500 ms before input unlocks.
+- RESTART is selected first (white border). Up/Down switch between RESTART and MENU; Space or Enter activates the selected button.
+- A pointer on RESTART restarts, a pointer on MENU returns to the main menu, and a pointer anywhere else restarts.
 - A new high score shows "NEW BEST!" in a highlight color and nothing otherwise.
-
 ## Color palette (retro)
 
 | Use | Color |
@@ -107,5 +111,5 @@ These are suggested starting colors. The reference screenshot `img/example-ui.pn
 
 ## Differences from the current spec
 
-- The spec's main menu has no buttons and no high score list. The PLAY and HIGH SCORES buttons and the BEST panel are additions.
+- The spec's main menu has no buttons and no high score list. The PLAY and HIGH SCORES buttons, the top 5 panel and the Game Over MENU button are additions.
 - The spec shows the score only while Playing or Paused, which matches the HUD above.

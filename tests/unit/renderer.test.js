@@ -224,9 +224,19 @@ describe('Main_Menu and High_Scores panel', () => {
     s.menu = { selected: 'PLAY', panelOpen: true };
     renderer.drawUi(ctx, s, {}, {});
     const t = texts(ctx);
-    expect(t).toEqual(expect.arrayContaining(['HIGH SCORES', 'BEST: 7', 'BACK']));
+    expect(t).toEqual(expect.arrayContaining(['HIGH SCORES', 'No scores yet', 'BACK']));
     expect(t).not.toContain('PLAY');
     expect(t).not.toContain('FLAPPY KIRO');
+  });
+  it('panel lists the top scores in rank order instead of BEST', () => {
+    const ctx = makeCtx();
+    const s = state('Main_Menu', { topScores: [9, 7, 3, 2, 1] });
+    s.menu = { selected: 'PLAY', panelOpen: true };
+    renderer.drawUi(ctx, s, {}, {});
+    const t = texts(ctx);
+    expect(t.filter((x) => /^\d\. /.test(x))).toEqual(['1. 9', '2. 7', '3. 3', '4. 2', '5. 1']);
+    expect(t).not.toContain('No scores yet');
+    expect(t.some((x) => x.startsWith('BEST'))).toBe(false);
   });
 });
 
@@ -250,11 +260,41 @@ describe('Paused and Game_Over', () => {
     const ctx = makeCtx();
     renderer.drawUi(ctx, state('Game_Over', { crashMs: 0, score: 5, highScore: 9 }), {}, {});
     const t = texts(ctx);
-    expect(t).toEqual(expect.arrayContaining(['GAME OVER', 'SCORE', '5', 'BEST', '9', 'RESTART', 'Press SPACE or tap to restart']));
-    // RESTART is the selected button: white border
-    const r = menu.buttonRect(cfg, 'RESTART');
-    const border = calls(ctx, 'strokeRect').find((e) => e.args[1] === r.y + 1.5);
-    expect(border.props.strokeStyle).toBe(renderer.PALETTE.text);
+    expect(t).toEqual(expect.arrayContaining(['GAME OVER', 'SCORE', '5', 'BEST', '9', 'RESTART', 'MENU', 'TOP 5', 'No scores yet']));
+    // RESTART is the selected button: white border, MENU is not
+    const border = (name) => {
+      const r = menu.buttonRect(cfg, name);
+      return calls(ctx, 'strokeRect').find((e) => e.args[1] === r.y + 1.5).props.strokeStyle;
+    };
+    expect(border('RESTART')).toBe(renderer.PALETTE.text);
+    expect(border('MENU')).toBe(renderer.PALETTE.pipeOutline);
+  });
+  it('moves the white border to MENU when MENU is selected', () => {
+    const ctx = makeCtx();
+    const s = state('Game_Over', { crashMs: 0 });
+    s.menu = { selected: 'MENU', panelOpen: false };
+    renderer.drawUi(ctx, s, {}, {});
+    const colour = (name) => {
+      const r = menu.buttonRect(cfg, name);
+      return calls(ctx, 'strokeRect').find((e) => e.args[1] === r.y + 1.5).props.strokeStyle;
+    };
+    expect(colour('MENU')).toBe(renderer.PALETTE.text);
+    expect(colour('RESTART')).toBe(renderer.PALETTE.pipeOutline);
+  });
+  it('lists the top scores and keeps all text clear of the buttons and above the ground', () => {
+    const ctx = makeCtx();
+    renderer.drawUi(ctx, state('Game_Over', { crashMs: 0, topScores: [9, 7, 3, 2, 1] }), {}, {});
+    expect(texts(ctx).filter((x) => /^\d\. /.test(x))).toEqual(['1. 9', '2. 7', '3. 3', '4. 2', '5. 1']);
+    const restart = menu.buttonRect(cfg, 'RESTART');
+    const menuBtn = menu.buttonRect(cfg, 'MENU');
+    expect(menuBtn.y).toBe(restart.y + restart.h + cfg.ui.BUTTON_GAP);
+    const labels = ['RESTART', 'MENU'];
+    const ys = calls(ctx, 'fillText').filter((e) => !labels.includes(e.args[0])).map((e) => e.args[2]);
+    ys.forEach((y) => expect(y).toBeLessThan(cfg.world.GROUND_TOP));
+    const panelBottom = Math.max(...ys.filter((y) => y < restart.y));
+    expect(panelBottom).toBeLessThan(restart.y);
+    const below = ys.filter((y) => y >= restart.y);
+    below.forEach((y) => expect(y).toBeGreaterThan(menuBtn.y + menuBtn.h));
   });
 
   it('shows NEW BEST! only when newHighScore is true', () => {

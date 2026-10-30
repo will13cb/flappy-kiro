@@ -153,16 +153,17 @@ function drawScore(ctx, state) {
   drawText(ctx, String(state.score), state.cfg.world.WIDTH / 2, SCORE_Y, SCORE_SIZE, 'center');
 }
 
-const BUTTON_LABELS = { PLAY: 'PLAY', HIGH_SCORES: 'HIGH SCORES', BACK: 'BACK', RESTART: 'RESTART' };
+const BUTTON_LABELS = { PLAY: 'PLAY', HIGH_SCORES: 'HIGH SCORES', BACK: 'BACK', RESTART: 'RESTART', MENU: 'MENU' };
 const TITLE_Y = 140;
 const MENU_BEST_Y = 372;
 const MENU_HINT_Y = 520;
-const PANEL_BEST_Y = 240;
+const PANEL_BEST_Y = 200;
 const PAUSED_Y = 280;
 const PAUSED_HINT_Y = 320;
-const GAME_OVER_Y = 160;
-const GAME_OVER_PANEL = { y: 220, h: 120, pad: 16 };
-const GAME_OVER_HINT_Y = 460;
+const GAME_OVER_Y = 80;
+const GAME_OVER_PANEL = { y: 110, h: 270, pad: 16 };
+const TOP_ROW_GAP = 22;
+const GAME_OVER_HINT_Y = 530;
 const HINT_SIZE = 10;
 const LABEL_SIZE = 14;
 const ICON_ALPHA = 0.6;
@@ -226,13 +227,25 @@ function drawIcons(ctx, state, opts) {
   ctx.restore();
 }
 
+// Ranked list of the best scores, or a placeholder when there are none. Rows start at y and are
+// TOP_ROW_GAP apart. Returns nothing; the caller picks x and alignment.
+function drawTopScores(ctx, state, x, y, align, size) {
+  const top = state.topScores || [];
+  if (top.length === 0) {
+    drawText(ctx, 'No scores yet', x, y, size, align);
+    return;
+  }
+  top.forEach((score, i) => {
+    drawText(ctx, (i + 1) + '. ' + score, x, y + i * TOP_ROW_GAP, size, align, i === 0 ? PALETTE.highlight : undefined);
+  });
+}
 function drawMainMenu(ctx, state) {
   const cfg = state.cfg;
   const cx = cfg.world.WIDTH / 2;
   const menu = state.menu || menuMod.initialMenu();
   if (menu.panelOpen) {
     drawText(ctx, 'HIGH SCORES', cx, TITLE_Y, 20, 'center');
-    drawText(ctx, 'BEST: ' + state.highScore, cx, PANEL_BEST_Y, 24, 'center', PALETTE.highlight);
+    drawTopScores(ctx, state, cx, PANEL_BEST_Y, 'center', 20);
     drawButton(ctx, cfg, 'BACK', true);
     return;
   }
@@ -265,17 +278,21 @@ function drawGameOver(ctx, state) {
   ctx.lineWidth = 3;
   ctx.strokeStyle = PALETTE.text;
   ctx.strokeRect(px + 1.5, GAME_OVER_PANEL.y + 1.5, pw - 3, GAME_OVER_PANEL.h - 3);
-  drawText(ctx, 'SCORE', px + pad, GAME_OVER_PANEL.y + 32, LABEL_SIZE, 'left');
-  drawText(ctx, String(state.score), px + pw - pad, GAME_OVER_PANEL.y + 32, LABEL_SIZE, 'right');
-  drawText(ctx, 'BEST', px + pad, GAME_OVER_PANEL.y + 64, LABEL_SIZE, 'left');
-  drawText(ctx, String(state.highScore), px + pw - pad, GAME_OVER_PANEL.y + 64, LABEL_SIZE, 'right');
+  const top = GAME_OVER_PANEL.y;
+  drawText(ctx, 'SCORE', px + pad, top + 28, LABEL_SIZE, 'left');
+  drawText(ctx, String(state.score), px + pw - pad, top + 28, LABEL_SIZE, 'right');
+  drawText(ctx, 'BEST', px + pad, top + 54, LABEL_SIZE, 'left');
+  drawText(ctx, String(state.highScore), px + pw - pad, top + 54, LABEL_SIZE, 'right');
   if (state.newHighScore) {
-    drawText(ctx, 'NEW BEST!', px + pad, GAME_OVER_PANEL.y + 96, LABEL_SIZE, 'left', PALETTE.highlight);
+    drawText(ctx, 'NEW BEST!', px + pad, top + 80, LABEL_SIZE, 'left', PALETTE.highlight);
   }
-  drawButton(ctx, cfg, 'RESTART', true);
-  drawText(ctx, 'Press SPACE or tap to restart', cx, GAME_OVER_HINT_Y, HINT_SIZE, 'center');
+  drawText(ctx, 'TOP 5', cx, top + 116, HINT_SIZE + 2, 'center');
+  drawTopScores(ctx, state, cx, top + 144, 'center', HINT_SIZE + 2);
+  const selected = state.menu && state.menu.selected === 'MENU' ? 'MENU' : 'RESTART';
+  drawButton(ctx, cfg, 'RESTART', selected === 'RESTART');
+  drawButton(ctx, cfg, 'MENU', selected === 'MENU');
+  drawText(ctx, 'SPACE/ENTER to select, UP/DOWN to move', cx, GAME_OVER_HINT_Y, HINT_SIZE, 'center');
 }
-
 // Menu, High_Scores_Panel, HUD icons, Paused and Game_Over overlays. Called last, over the world and ghost.
 // opts.muted: current mute state from the audio player (the GameState does not hold it).
 function drawUi(ctx, state, assets, opts) { // eslint-disable-line no-unused-vars

@@ -7,7 +7,7 @@ import * as menu from '../../src/menu.js';
 import * as game from '../../src/game.js';
 
 export const MODES = ['Main_Menu', 'Playing', 'Paused', 'Game_Over'];
-export const BUTTON_NAMES = ['PLAY', 'HIGH_SCORES', 'BACK', 'RESTART'];
+export const BUTTON_NAMES = ['PLAY', 'HIGH_SCORES', 'BACK', 'RESTART', 'MENU'];
 export const ICON_NAMES = ['MUTE', 'PAUSE'];
 
 function gameApi() {
@@ -87,7 +87,7 @@ export function buildState(cfg, mode, extra = {}) {
     state.menu = { selected: extra.selected || 'PLAY', panelOpen: !!extra.panelOpen };
     return state;
   }
-  state.menu = { selected: 'PLAY', panelOpen: false };
+  state.menu = { selected: mode === 'Game_Over' ? 'RESTART' : 'PLAY', panelOpen: false };
   state.ghost = extra.ghost || { y: cfg.world.MENU_GHOST_Y, vy: 0 };
   state.pipes = extra.pipes || [];
   state.score = extra.score || 0;
@@ -130,7 +130,7 @@ export function arbGameState(cfg = DEFAULT_CONFIG, mode) {
       );
   }
   if (mode === 'Game_Over') {
-    const lockout = cfg.timing.LOCKOUT_MS === undefined ? 500 : cfg.timing.LOCKOUT_MS;
+    const lockout = cfg.timing.LOCKOUT_MS;
     return fc
       .tuple(base, fc.boolean(), arbMs(lockout), arbMs(3000), fc.boolean())
       .map(([b, locked, lockoutMs, deathMs, newHighScore]) =>

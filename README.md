@@ -48,13 +48,14 @@ npm test
 | Activate a menu button | Space or Enter | Click the button |
 | Pause / resume | P or Escape | Pause icon (top right) |
 | Mute / unmute | M | Speaker icon (top left) |
-| Restart after game over | Space or Enter | Click or tap |
+| Restart after game over | Space or Enter (RESTART is selected) | Click RESTART, or tap anywhere else |
+| Back to the menu from game over | Down, then Space or Enter | Click MENU |
 
 - Each round starts with 1.5 s of invincibility against walls, shown by Ghosty blinking. The ground and ceiling still count during this time.
 - The scroll speed rises every 5 points, up to a maximum.
-- After a crash, input is ignored for 0.5 s so you don't restart by accident.
+- After a crash, input is ignored for 1 s (`lockoutMs`). The Game Over panel appears 0.5 s in, so it stays readable for 0.5 s before input unlocks. `lockoutMs` must be greater than `crashMs`.
 - Switching tabs pauses the game.
-- Your best score is kept in `localStorage`.
+- Your best score and your top 5 scores are kept in `localStorage`. The High Scores panel and the Game Over panel show the top 5.
 - Calm music plays on the menu and faster music during a round. It pauses with the game and stops at game over. Mute (M) silences music too.
 
 ## Project layout
@@ -71,7 +72,7 @@ src/
   clouds.js           parallax clouds: create, move, wrap
   animation.js        Ghosty frame selection (idle, flap, death)
   menu.js             menu model, button and icon layout, hit testing
-  scoreStore.js       high score persistence
+  scoreStore.js       high score and top 5 persistence
   audio.js            audio player with mute, event-to-sound mapping
   assets.js           independent image and sound loading with fallbacks
   input.js            keyboard, mouse, touch and visibility wiring
@@ -167,7 +168,7 @@ Two places share data on purpose, so that what you see matches what happens:
 | `animation.js` | yes | Picks the idle, flap or death frame and its transforms |
 | `menu.js` | yes | Menu navigation, button and icon rectangles, `hitTest` |
 | `game.js` | mutates state | Modes, input routing, the per-frame `update`, events |
-| `scoreStore.js` | storage | Reads and writes the high score, never throws |
+| `scoreStore.js` | storage | Reads and writes the high score and top 5 list, never throws |
 | `audio.js` | audio elements | Plays sounds, mute, `soundsFor(events)` |
 | `assets.js` | browser | Loads each asset independently; failures resolve to `null` |
 | `input.js` | browser | Maps DOM events to inputs such as `{ kind: 'space' }` or `{ kind: 'pointer', x, y }` |
@@ -176,7 +177,7 @@ Two places share data on purpose, so that what you see matches what happens:
 
 ## Game states
 
-`game.js` is a finite state machine with four modes. The High Scores panel is part of `Main_Menu`; opening it does not change the mode.
+`game.js` is a finite state machine with four modes. Game Over can go back to Playing or to Main_Menu. The High Scores panel is part of `Main_Menu`; opening it does not change the mode.
 
 ```mermaid
 stateDiagram-v2
@@ -185,7 +186,8 @@ stateDiagram-v2
   Playing --> Paused: P / Esc, pause icon, or tab hidden
   Paused --> Playing: P / Esc or pause icon
   Playing --> Game_Over: hit a wall, the ground or the ceiling
-  Game_Over --> Playing: Space / Enter / tap (after 0.5 s lockout)
+  Game_Over --> Playing: RESTART, Space / Enter on RESTART, or tap elsewhere (after 1 s lockout)
+  Game_Over --> Main_Menu: MENU, or Space / Enter on MENU (after 1 s lockout)
 
   state Main_Menu {
     [*] --> Menu
@@ -327,7 +329,7 @@ flowchart LR
   - The score shows at the top while playing.
   - The mute and pause icons appear in Playing and Paused.
   - Paused dims the screen.
-  - Game Over shows a panel with the score, the best score and "NEW BEST!" after the crash animation.
+  - Game Over shows a panel with the score, the best score, "NEW BEST!", a TOP 5 list, and RESTART and MENU buttons after the crash animation.
 
 See `.kiro/steering/visual-design.md`, `ghosty-sprites.md` and `ui-mockups.md` for the visual rules.
 

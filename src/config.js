@@ -12,7 +12,7 @@ const BASE = {
   },
   speed: { INITIAL_SPEED: 120, SPEED_INCREMENT: 10, SPEED_STEP_INTERVAL: 5, MAX_SPEED: 240 },
   timing: {
-    INVINCIBILITY_MS: 1500, CRASH_MS: 500, CRASH_FLASH_MS: 100, BLINK_MS: 100, LOCKOUT_MS: 500, MAX_FRAME_MS: 50,
+    INVINCIBILITY_MS: 1500, CRASH_MS: 500, CRASH_FLASH_MS: 100, BLINK_MS: 100, LOCKOUT_MS: 1000, MAX_FRAME_MS: 50,
   },
   clouds: {
     SPEED_MIN: 10,
@@ -241,6 +241,10 @@ function validateConfig(cfg) {
   ['INVINCIBILITY_MS', 'CRASH_MS', 'LOCKOUT_MS'].forEach((k) => {
     if (!(timing[k] > 0)) fail('timing.positive', k + ' (' + timing[k] + ') must be > 0');
   });
+  // The panel appears when crashMs reaches 0; input must stay locked for a while after that.
+  if (!(timing.LOCKOUT_MS > timing.CRASH_MS)) {
+    fail('timing.lockoutAfterCrash', 'LOCKOUT_MS (' + timing.LOCKOUT_MS + ') must be > CRASH_MS (' + timing.CRASH_MS + ')');
+  }
   if (!(anim.DEATH_TOTAL_MS <= timing.CRASH_MS)) {
     fail('anim.deathFitsCrash', 'DEATH_TOTAL_MS (' + anim.DEATH_TOTAL_MS + ') must be <= CRASH_MS (' + timing.CRASH_MS + ')');
   }

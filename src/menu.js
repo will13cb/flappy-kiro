@@ -9,7 +9,7 @@ function initialMenu() {
 
 function buttonsFor(mode, menu) {
   if (mode === 'Main_Menu') return menu && menu.panelOpen ? ['BACK'] : MENU_BUTTONS.slice();
-  if (mode === 'Game_Over') return ['RESTART'];
+  if (mode === 'Game_Over') return ['RESTART', 'MENU'];
   return [];
 }
 
@@ -20,6 +20,7 @@ function buttonRect(cfg, name) {
   else if (name === 'HIGH_SCORES') y = u.MENU_BUTTON_Y + u.BUTTON_HEIGHT + u.BUTTON_GAP;
   else if (name === 'BACK') y = u.PANEL_BUTTON_Y;
   else if (name === 'RESTART') y = u.GAME_OVER_BUTTON_Y;
+  else if (name === 'MENU') y = u.GAME_OVER_BUTTON_Y + u.BUTTON_HEIGHT + u.BUTTON_GAP;
   else return null;
   return { x: u.BUTTON_X, y, w: u.BUTTON_WIDTH, h: u.BUTTON_HEIGHT };
 }
@@ -64,7 +65,7 @@ function navigate(menu, dir) {
   return Object.assign({}, menu, { selected: MENU_BUTTONS[(i + step + n) % n] });
 }
 
-// PLAY and RESTART are handled by game.js.
+// PLAY, RESTART and MENU are handled by game.js.
 function activate(menu, name) {
   if (name === 'HIGH_SCORES') return Object.assign({}, menu, { panelOpen: true });
   if (name === 'BACK') return Object.assign({}, menu, { panelOpen: false });

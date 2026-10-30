@@ -35,7 +35,11 @@ const arbCase = arbConfig.chain((cfg) =>
           .tuple(arbPointerInput(cfg).filter((p) => !rects.some((r) => inside(r, p.x, p.y))))
           .map(([empty]) => ({ cfg, state, inputs: paths.concat([empty]) }));
       }
-      return arbPointerInput(cfg).map((p) => ({ cfg, state, inputs: paths.concat([p]) }));
+      // A pointer on MENU leaves for Main_Menu instead of starting a round.
+      const menuBtn = rects.find((r) => r.name === 'MENU');
+      return arbPointerInput(cfg)
+        .filter((p) => !inside(menuBtn, p.x, p.y))
+        .map((p) => ({ cfg, state, inputs: paths.concat([p]) }));
     })
 );
 

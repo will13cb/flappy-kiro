@@ -8,7 +8,8 @@ import * as collision from './collision.js';
 
 
 // Starts Main_Menu: ghost at MENU_GHOST_Y, menu = initialMenu(), clouds created, timers at initial values.
-function createGame(cfg, highScore, rng) {
+// topScores: descending list of up to 5 best scores, shown by the renderer.
+function createGame(cfg, highScore, rng, topScores) {
   return {
     cfg,
     mode: 'Main_Menu',
@@ -18,6 +19,7 @@ function createGame(cfg, highScore, rng) {
     groundOffset: 0,
     score: 0,
     highScore: highScore > 0 ? Math.floor(highScore) : 0,
+    topScores: topScores ? topScores.slice() : [],
     speed: cfg.speed.INITIAL_SPEED,
     invincibleMs: 0,
     crashMs: 0,
@@ -31,6 +33,20 @@ function createGame(cfg, highScore, rng) {
   };
 }
 
+// Game_Over -> Main_Menu: ghost back at MENU_GHOST_Y, world cleared, panel closed, PLAY selected.
+function returnToMenu(state) {
+  state.mode = 'Main_Menu';
+  state.ghost = { y: state.cfg.world.MENU_GHOST_Y, vy: 0 };
+  state.pipes = [];
+  state.score = 0;
+  state.crashMs = 0;
+  state.lockoutMs = 0;
+  state.deathMs = 0;
+  state.newHighScore = false;
+  state.flapMs = null;
+  state.menu = Object.assign({}, state.menu, { selected: 'PLAY', panelOpen: false });
+  return [];
+}
 // Resets round values, starts invincibility, applies the jump and restarts the flap animation.
 // Every start and restart path calls this. Mutates and returns [{ type: 'jump' }].
 function startRound(state, rng) {
@@ -121,8 +137,13 @@ function handleInput(state, input, deps) {
 
   if (mode === 'Game_Over') {
     if (lockedOut()) return none;
-    if (kind === 'space' || kind === 'enter') return startRound(state, rng);
-    if (kind === 'pointer') return startRound(state, rng);
+    const choose = (name) => (name === 'MENU' ? returnToMenu(state) : startRound(state, rng));
+    if (kind === 'space' || kind === 'enter') return choose(state.menu.selected);
+    if (kind === 'up' || kind === 'down') {
+      state.menu = Object.assign({}, state.menu, { selected: state.menu.selected === 'MENU' ? 'RESTART' : 'MENU' });
+      return none;
+    }
+    if (kind === 'pointer') return choose(menu.hitTest(state.cfg, state, input.x, input.y));
     return none;
   }
 
@@ -193,6 +214,7 @@ function update(state, dt, deps) {
     state.crashMs = cfg.timing.CRASH_MS;
     state.lockoutMs = cfg.timing.LOCKOUT_MS;
     state.newHighScore = state.score > state.highScore;
+    state.menu = Object.assign({}, state.menu, { selected: 'RESTART' });
     events.push({ type: 'gameOver', score: state.score, previousHighScore: state.highScore });
   }
   return events;

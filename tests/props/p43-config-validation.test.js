@@ -66,6 +66,9 @@ const MUTATIONS = {
     const key = DURATIONS[Math.floor(t * 1000) % DURATIONS.length];
     c.timing[key] = t > 0.5 ? 0 : -t * 1000;
   },
+  'timing.lockoutAfterCrash': (c, t) => {
+    c.timing.LOCKOUT_MS = Math.max(1, c.timing.CRASH_MS * (1 - 0.5 * t)); // > 0 but <= CRASH_MS
+  },
   'anim.deathFitsCrash': (c, t) => {
     c.animation.DEATH_TOTAL_MS = c.timing.CRASH_MS + t * 1000;
   },
