@@ -55,3 +55,7 @@ dist/
 build/
 # Kiro spec task metadata
 .kiro/specs/flappy-kiro/tasks.meta.json
+
+# Local MCP data (leaderboard)
+data/
+tests/.tmp-*

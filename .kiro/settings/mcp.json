@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "flappy-leaderboard": {
+      "command": "node",
+      "args": ["mcp/leaderboard/server.js"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": ["get_leaderboard", "get_player", "list_achievements"]
+    }
+  }
+}
