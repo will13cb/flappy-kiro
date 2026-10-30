@@ -9,8 +9,8 @@ const WORLDS = [
   { id: 'sky', title: 'THE SKY', gravityScale: 1, jumpScale: 1, speedScale: 1, gapShiftScale: 1, twist: {} },
   { id: 'forest', title: 'THE FOREST', gravityScale: 1, jumpScale: 1, speedScale: 1.08, gapShiftScale: 1,
     twist: { WIND_FORCE: 300 } },
-  { id: 'castle', title: 'THE CASTLE', gravityScale: 1, jumpScale: 1, speedScale: 1.17, gapShiftScale: 0.6,
-    twist: { GAP_AMPLITUDE: 50, GAP_PERIOD_S: 2.5 } },
+  { id: 'castle', title: 'THE CASTLE', gravityScale: 1, jumpScale: 1, speedScale: 1.12, gapShiftScale: 0.5,
+    twist: { GAP_AMPLITUDE: 32, GAP_PERIOD_S: 3.5 } }, // slow, readable slides
   // Floaty: half gravity and a 75% flap give a higher, longer arc (about 63 px, 1.1 s).
   { id: 'space', title: 'SPACE', gravityScale: 0.5, jumpScale: 0.75, speedScale: 1.25, gapShiftScale: 0.7,
     twist: {} },
