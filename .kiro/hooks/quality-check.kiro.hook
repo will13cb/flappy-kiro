@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Quality check",
+  "description": "Full check on demand: runs the test suite, checks the coding and visual standards, and asks the code-reviewer agent to review the current changes.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run a quality check on the current changes (git diff and git diff --staged; if both are empty, the last commit). 1) Run `npx vitest --run` and report the result. 2) Run `git grep -nE \"require\\(|module\\.exports|window\\.FlappyKiro|innerHTML|eval\\(|setInterval\\(\" -- src mcp scripts` and report any hit as a standards violation. 3) Invoke the code-reviewer subagent on the same changes. Then give one combined verdict (Approve / Approve with nits / Request changes) with the blockers first. Do not modify any files."
+  }
+}

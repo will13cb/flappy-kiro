@@ -1,0 +1,52 @@
+# Tests, builds and deploys the game to GitHub Pages on every push to master.
+# One-time setup: Settings > Pages > Source: "GitHub Actions".
+# Optional analytics: Settings > Secrets and variables > Actions > Variables:
+#   CF_ANALYTICS_TOKEN (Cloudflare Web Analytics) and/or GOATCOUNTER_CODE (GoatCounter).
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build site
+        run: npm run build
+        env:
+          CF_ANALYTICS_TOKEN: ${{ vars.CF_ANALYTICS_TOKEN }}
+          GOATCOUNTER_CODE: ${{ vars.GOATCOUNTER_CODE }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

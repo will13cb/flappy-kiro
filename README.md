@@ -19,6 +19,7 @@ Plain JavaScript ES modules on an HTML canvas, with no build step and no runtime
 - [Rendering](#rendering)
 - [Assets and fallbacks](#assets-and-fallbacks)
 - [Testing](#testing)
+- [Deployment](#deployment)
 - [MCP servers](#mcp-servers)
 - [Contributing](#contributing)
 
@@ -31,7 +32,7 @@ python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-Any static file server works (for example `npx serve`). Installing Node is only needed to run the tests:
+Any static file server works (for example `npx serve`). The live version is deployed to GitHub Pages; see [Deployment](#deployment). Installing Node is only needed to run the tests:
 
 ```bash
 npm install
@@ -366,6 +367,27 @@ npx vitest --run tests/props/p13-scoring.test.js   # one file
   - `tests/helpers/game-arbs.js` has game-state generators and `runSteps`, which drives `handleInput` and `update` and records transitions and events.
 
 The core is deterministic (seeded `rng`, explicit `dt`), so tests run the real game logic with no browser and no timers.
+
+## Deployment
+
+The game is hosted for free on GitHub Pages. `.github/workflows/deploy.yml` runs on every push to `master`:
+
+1. `npm ci` and `npm test`. A failing test stops the deploy.
+2. `npm run build`: `scripts/build-site.js` copies only `index.html`, `src/`, `assets/` and the licence into `_site/`, which comes to about 2 MB.
+3. The `_site/` artifact is uploaded and deployed to Pages.
+
+**One-time setup:** in **Settings > Pages**, set **Source** to **GitHub Actions**. Pages is free for public repositories.
+
+**Analytics (optional):** add one or both repository variables under **Settings > Secrets and variables > Actions > Variables**. With neither set, the site ships with no analytics.
+
+| Variable | Adds |
+|---|---|
+| `CF_ANALYTICS_TOKEN` | [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/) (free, no cookies) |
+| `GOATCOUNTER_CODE` | [GoatCounter](https://www.goatcounter.com/) (free for non-commercial use) |
+
+The build validates both values and adds the snippet before `</head>`.
+
+**Monitoring:** `.github/workflows/uptime.yml` checks the page, `src/main.js` and two assets every hour. A failed check sends GitHub's failed-workflow email. Set a `SITE_URL` variable if the site moves. GitHub pauses scheduled workflows after 60 days with no repository activity.
 
 ## MCP servers
 

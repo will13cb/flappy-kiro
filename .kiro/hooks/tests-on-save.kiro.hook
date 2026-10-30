@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Run tests on save",
+  "description": "Runs the vitest suite whenever game, MCP or test code is saved, so regressions show up immediately.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/**/*.js", "mcp/**/*.js", "tests/**/*.js", "scripts/**/*.js"]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npx vitest --run --reporter=dot"
+  }
+}
