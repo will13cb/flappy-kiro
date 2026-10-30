@@ -162,3 +162,24 @@ describe('play modes', () => {
     expect(loadWorldBests(storage, ids)).toEqual({ sky: 0, forest: 0 });
   });
 });
+describe('world changes land on the threshold', () => {
+  it('moves to the next world right after the 5th, 10th and 15th pair, not one pair later', () => {
+    const P = DEFAULT_CONFIG.world.POINTS_PER_WORLD;
+    const s = createGame(DEFAULT_CONFIG, 0, () => 0.5, [], {});
+    handleInput(s, { kind: 'space' }, { rng: () => 0.5 });
+    const scoreAtCard = [];
+    const worldAtScore = {};
+    for (let frame = 0; frame < 20000 && scoreAtCard.length < 3; frame++) {
+      s.invincibleMs = 1e9; // fly through everything: only the world flow is under test
+      const next = s.pipes.find((p) => p.x + s.cfg.pipes.CAP_WIDTH >= s.cfg.ghost.X);
+      s.ghost = { y: next ? next.gapCenter : 300, vy: 0 };
+      const before = s.transition && s.transition.phase;
+      update(s, 0.016, { rng: () => 0.5 });
+      worldAtScore[s.score] = s.worldIndex;
+      if (s.transition && s.transition.phase === 'card' && before !== 'card') scoreAtCard.push(s.score);
+    }
+    expect(scoreAtCard).toEqual([P, 2 * P, 3 * P]);
+    expect(worldAtScore[P - 1]).toBe(0);
+    expect(worldAtScore[P + 1]).toBe(1);
+  });
+});

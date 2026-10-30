@@ -36,6 +36,7 @@ function createGame(cfg, highScore, rng, topScores, opts) {
     startWorld: o.startWorld || 0,
     transition: null,
     wind: twists.initialWind(),
+    pairsSpawned: 0, // wall pairs spawned in the current world, capped at POINTS_PER_WORLD on the journey
     fx: fx.createFx(),
     shakeMs: 0,
     trail: [],
@@ -73,6 +74,7 @@ function enterWorld(state, index) {
   state.cfg = worlds.configFor(state.worlds, index);
   state.transition = null;
   state.wind = twists.initialWind();
+  state.pairsSpawned = 0;
 }
 
 // Clears per-round effects.
@@ -314,7 +316,12 @@ function stepWorld(state, dt, ms, rng) {
   state.groundOffset += state.speed * dt;
   state.clouds = clouds.moveClouds(cfg, state.clouds, dt);
   state.pipes = pipes.removeOffscreen(cfg, state.pipes);
-  if (!state.transition && pipes.shouldSpawn(cfg, state.pipes)) {
+  // On the journey a world holds exactly POINTS_PER_WORLD pairs, so its last pair is the one that
+  // reaches the threshold (5, 10, 15) and the next world starts right after it, not a pair later.
+  const single = worlds.singleWorldIndex(state.playMode) !== null;
+  const full = !single && state.pairsSpawned >= state.baseCfg.world.POINTS_PER_WORLD;
+  if (!state.transition && !full && pipes.shouldSpawn(cfg, state.pipes)) {
+    state.pairsSpawned += 1;
     const spawned = pipes.spawnPair(cfg, state.pipes, rng);
     spawned[spawned.length - 1] = twists.initPair(cfg, spawned[spawned.length - 1]);
     state.pipes = spawned;
