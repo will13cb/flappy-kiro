@@ -1,0 +1,48 @@
+{
+  "_comment": "Flappy Kiro tunables. Units: px = logical pixels, s = seconds, ms = milliseconds. Y grows downward, so an upward jump velocity is negative. Derived values (ground top, gap center range, etc.) are computed in code and are not listed here.",
+  "world": {
+    "width": 480,
+    "height": 640,
+    "groundHeight": 80
+  },
+  "ghost": {
+    "spriteSize": 32,
+    "hitboxShape": "circle",
+    "hitboxRadius": 12,
+    "x": 120,
+    "gravity": 800,
+    "jumpVelocity": -300
+  },
+  "pipes": {
+    "pipeWidth": 64,
+    "capWidth": 72,
+    "capHeight": 24,
+    "gapHeight": 140,
+    "gapMargin": 60,
+    "pipeSpacing": 350,
+    "maxGapShift": 160
+  },
+  "speed": {
+    "wallSpeed": 120,
+    "speedIncrement": 10,
+    "speedStepInterval": 5,
+    "maxSpeed": 240
+  },
+  "timing": {
+    "invincibilityMs": 1500,
+    "crashMs": 500,
+    "crashFlashMs": 100,
+    "blinkMs": 100,
+    "lockoutMs": 500,
+    "maxFrameMs": 50
+  },
+  "clouds": {
+    "speedMin": 10,
+    "speedMax": 60,
+    "layers": [
+      { "width": 40, "depth": 0.1, "alpha": 0.5 },
+      { "width": 80, "depth": 0.5, "alpha": 0.6 },
+      { "width": 120, "depth": 0.9, "alpha": 0.7 }
+    ]
+  }
+}
