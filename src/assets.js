@@ -2,6 +2,7 @@
 //   sprite: ghosty.png  -> on failure null, and drawFallbackSprite draws a 24x24 white square
 //   sheet:  optional ghosty-sheet.png -> on failure null, the renderer uses transforms of the sprite (silent)
 //   sounds: jump / score / game_over -> on failure null (silence, see Audio_Player)
+//   music: one theme per screen and world; ambient: the forest wind loop (same fallback)
 // Browser APIs are injectable: deps = { createImage, createAudio }. Without them, globals are used if present.
 
 const SPRITE_FILE = 'assets/ghosty.png';
@@ -12,8 +13,12 @@ const SOUND_FILES = {
 };
 const MUSIC_FILES = {
   menu: 'assets/music-menu.wav',
-  game: 'assets/music-game.wav',
+  sky: 'assets/music-sky.wav',
+  forest: 'assets/music-forest.wav',
+  castle: 'assets/music-castle.wav',
+  space: 'assets/music-space.wav',
 };
+const AMBIENT_FILES = { wind: 'assets/wind.wav' };
 const DEFAULT_SHEET_FILE = 'assets/ghosty-sheet.png';
 const FALLBACK_SIZE = 24;
 
@@ -60,7 +65,8 @@ function loadSound(src, createAudio) {
   });
 }
 
-// Always resolves: { sprite, sheet, sounds: { jump, score, game_over }, music: { menu, game } }
+// Always resolves: { sprite, sheet, sounds: { jump, score, game_over }, music: { menu, sky, forest, castle, space },
+// ambient: { wind } }
 // with null for failed assets.
 function loadAssets(cfg, deps) {
   const d = Object.assign(defaultDeps(), deps || {});
@@ -80,7 +86,8 @@ function loadAssets(cfg, deps) {
     imageOrNull(sheetFile),
     loadGroup(SOUND_FILES),
     loadGroup(MUSIC_FILES),
-  ]).then(([sprite, sheet, sounds, music]) => ({ sprite, sheet, sounds, music }));
+    loadGroup(AMBIENT_FILES),
+  ]).then(([sprite, sheet, sounds, music, ambient]) => ({ sprite, sheet, sounds, music, ambient }));
 }
 
 // Fallback sprite: white 24x24 square centered on (cx, cy).

@@ -21,10 +21,25 @@ function drawObstacle(ctx, kind, rects, pal) {
     if (kind === 1) drawTrunk(ctx, x, r, pal, isCap);
     else if (kind === 2) drawPillar(ctx, x, r, pal, isCap, j === 1);
     else if (kind === 3) drawAsteroid(ctx, x, r, pal, isCap);
+    drawShading(ctx, x, r, pal, isCap, j === 1);
     ctx.lineWidth = 2;
     ctx.strokeStyle = pal.pipeOutline;
     ctx.strokeRect(x + 1, r.y + 1, r.w - 2, r.h - 2);
   }
+}
+
+// Light band on the left, shade on the right and a darker lip on the cap edge that faces the gap:
+// the same cue on every obstacle so they read as solid. Stays inside the collision rectangle.
+function drawShading(ctx, x, r, pal, isCap, isTopCap) {
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = pal.pipeLight;
+  ctx.fillRect(x + 4, r.y + 4, Math.max(2, Math.round(r.w * 0.14)), r.h - 8);
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = pal.pipeDark;
+  ctx.fillRect(x + r.w - 4 - Math.round(r.w * 0.16), r.y + 4, Math.round(r.w * 0.16), r.h - 8);
+  if (isCap) ctx.fillRect(x + 4, isTopCap ? r.y + r.h - 8 : r.y + 4, r.w - 8, 4);
+  ctx.restore();
 }
 
 // Forest: bark stripes on the trunk, leafy blobs on the caps.
@@ -71,13 +86,95 @@ function drawAsteroid(ctx, x, r, pal, isCap) {
 
 const wrap = (v, m) => ((v % m) + m) % m;
 
-// Backdrop details behind the obstacles. t is a world clock in px (scroll distance), so
-// everything freezes with the world outside Playing.
+// Filled circle from 2 px scanlines (flat pixel-art disc).
+function disc(ctx, cx, cy, r) {
+  for (let dy = -r; dy < r; dy += 2) {
+    const half = Math.round(Math.sqrt(r * r - (dy + 1) * (dy + 1)));
+    ctx.fillRect(cx - half, cy + dy, half * 2, 2);
+  }
+}
+
+// Rolling hills as 6 px columns; drift is the parallax offset in px.
+function hills(ctx, W, groundTop, drift, base, amp) {
+  for (let x = 0; x < W; x += 6) {
+    const u = x + drift;
+    const h = Math.round(base + amp * Math.sin(u * 0.018) + amp * 0.5 * Math.sin(u * 0.047 + 1));
+    ctx.fillRect(x, groundTop - h, 6, h);
+  }
+}
+
+// A row of pines: three stacked bars on a trunk, repeating every `spacing` px and wrapping.
+function pines(ctx, W, groundTop, drift, spacing, height, seed) {
+  const span = W + spacing * 2;
+  for (let i = 0; i * spacing < span; i++) {
+    const x = Math.round(wrap(i * spacing - drift, span)) - spacing;
+    const h = height + Math.round(h01(i + seed) * 24);
+    const w = 18 + Math.round(h01(i + seed + 50) * 8);
+    ctx.fillRect(x - 2, groundTop - 12, 4, 12);
+    ctx.fillRect(x - w / 2, groundTop - 12 - h * 0.35, w, Math.round(h * 0.35));
+    ctx.fillRect(x - w * 0.35, groundTop - 12 - h * 0.7, w * 0.7, Math.round(h * 0.35));
+    ctx.fillRect(x - w * 0.18, groundTop - 12 - h, w * 0.36, Math.round(h * 0.3));
+  }
+}
+
+// A distant castle wall: battlements along the top and a tower with a lit window now and then.
+function wall(ctx, W, groundTop, drift, height, pal) {
+  const span = W + 160;
+  for (let x = 0; x < W; x += 16) {
+    const u = wrap(x + drift, span);
+    ctx.fillRect(x, groundTop - height, 16, height);
+    if (Math.floor(u / 16) % 2 === 0) ctx.fillRect(x, groundTop - height - 8, 16, 8);
+  }
+  for (let i = 0; i < 4; i++) {
+    const x = Math.round(wrap(i * 160 + 50 - drift, span)) - 40;
+    ctx.fillStyle = pal.far2;
+    ctx.fillRect(x, groundTop - height - 52, 44, 52 + height);
+    ctx.fillRect(x - 4, groundTop - height - 60, 52, 8);
+    ctx.fillStyle = pal.accent;
+    ctx.globalAlpha = 0.35;
+    ctx.fillRect(x + 18, groundTop - height - 36, 8, 12);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = pal.far2;
+  }
+}
+
+// Backdrop behind the obstacles: a low-contrast scene per world, then small drifting details.
+// t is a world clock in px (scroll distance), so everything freezes with the world outside Playing.
+// Scenery colours are muted and never green like the walls, so the playfield stays readable.
 function drawBackdrop(ctx, kind, cfg, pal, t) {
   const W = cfg.world.WIDTH;
   const H = cfg.world.GROUND_TOP;
-  if (kind === 1) {
-    // Falling leaves drifting left.
+  // Horizon haze: three soft bands that lift the sky towards the ground.
+  ctx.save();
+  ctx.fillStyle = pal.haze;
+  [[H - 220, 0.1], [H - 150, 0.14], [H - 80, 0.2]].forEach(([y, a]) => {
+    ctx.globalAlpha = a;
+    ctx.fillRect(0, y, W, H - y);
+  });
+  ctx.restore();
+  if (kind === 0) {
+    ctx.save();
+    ctx.fillStyle = pal.accent;
+    ctx.globalAlpha = 0.18;
+    disc(ctx, 380, 112, 34);
+    ctx.globalAlpha = 0.9;
+    disc(ctx, 380, 112, 22);
+    ctx.restore();
+    ctx.fillStyle = pal.far;
+    hills(ctx, W, H, t * 0.12, 40, 16);
+    ctx.fillStyle = pal.far2;
+    hills(ctx, W, H, t * 0.25 + 90, 22, 11);
+  } else if (kind === 1) {
+    ctx.fillStyle = pal.far;
+    pines(ctx, W, H, t * 0.12, 44, 70, 0);
+    ctx.fillStyle = pal.far2;
+    pines(ctx, W, H, t * 0.25 + 20, 60, 90, 100);
+    // Faint light shafts drifting through the canopy.
+    ctx.save();
+    ctx.globalAlpha = 0.07;
+    ctx.fillStyle = pal.accent2;
+    for (let i = 0; i < 3; i++) ctx.fillRect(Math.round(wrap(70 + i * 170 - t * 0.08, W + 60)) - 30, 0, 26, H);
+    ctx.restore();
     ctx.fillStyle = pal.accent;
     for (let i = 0; i < 14; i++) {
       const x = wrap(h01(i) * W - t * 0.35, W);
@@ -85,6 +182,15 @@ function drawBackdrop(ctx, kind, cfg, pal, t) {
       ctx.fillRect(Math.round(x), Math.round(y), 4, 3);
     }
   } else if (kind === 2) {
+    ctx.save();
+    ctx.fillStyle = pal.accent2;
+    ctx.globalAlpha = 0.14;
+    disc(ctx, 96, 104, 30);
+    ctx.globalAlpha = 0.8;
+    disc(ctx, 96, 104, 20);
+    ctx.restore();
+    ctx.fillStyle = pal.far;
+    wall(ctx, W, H, t * 0.12, 70, pal);
     // Torches on the back wall, flickering.
     for (let i = 0; i < 4; i++) {
       const x = Math.round(wrap(60 + i * 120 - t * 0.2, W));
@@ -97,7 +203,18 @@ function drawBackdrop(ctx, kind, cfg, pal, t) {
       ctx.fillRect(x, 136 - flick / 2, 4, 4);
     }
   } else if (kind === 3) {
-    // Twinkling stars with a slow parallax drift.
+    // A ringed planet low in the sky, then twinkling stars with a slow parallax drift.
+    const px = Math.round(wrap(330 - t * 0.04, W + 200)) - 60;
+    ctx.fillStyle = pal.far2;
+    disc(ctx, px, 440, 56);
+    ctx.fillStyle = pal.far;
+    disc(ctx, px - 14, 424, 30);
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = pal.accent;
+    ctx.fillRect(px - 92, 436, 184, 4);
+    ctx.fillRect(px - 76, 444, 152, 2);
+    ctx.restore();
     for (let i = 0; i < 40; i++) {
       const x = Math.round(wrap(h01(i) * W - t * 0.1, W));
       const y = Math.round(h01(i + 90) * (H - 10));

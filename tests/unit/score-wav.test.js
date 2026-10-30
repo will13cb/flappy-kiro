@@ -97,8 +97,8 @@ describe('assets/score.wav', () => {
 });
 
 describe('existing sounds are valid and short', () => {
-  // jump.wav and game_over.wav are provided recordings (game_over is a spoken "game over"),
-  // so they are not trimmed to the audio-assets.md targets; only sanity-check them.
+  // jump.wav is a provided recording, so it is not trimmed to the audio-assets.md target;
+  // only sanity-check it. game_over.wav is generated and checked against the synth in synth.test.js.
   for (const name of ['jump.wav', 'game_over.wav']) {
     it(`${name} is a readable WAV under 3 s`, () => {
       const { fmt, dataSize } = parseWav(fs.readFileSync(path.join(ASSETS, name)));

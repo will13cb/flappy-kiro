@@ -8,7 +8,7 @@ import * as collision from './collision.js';
 import * as worlds from './worlds.js';
 import * as twists from './twists.js';
 import * as fx from './particles.js';
-import { cycleSkin } from './skins.js';
+import { cycleSkin, cycleTrail } from './skins.js';
 
 // Flap puff tone per world kind (sky, forest, castle, space); colours live in the renderer.
 const PUFF_TONES = ['puff', 'leaf', 'ember', 'star'];
@@ -23,7 +23,8 @@ function buildWorlds(cfg) {
 
 // Starts Main_Menu: ghost at MENU_GHOST_Y, menu = initialMenu(), clouds created, timers at initial values.
 // topScores: descending list of up to 5 best scores, shown by the renderer.
-// opts: { startWorld (index), bestMedal (medal or null), skin (skin id) }.
+// opts: { startWorld (index), bestMedal (medal or null), skin (skin id), trailStyle (trail id),
+//   playMode ('journey' or a world id), worldBests ({ world id: best score }) }.
 function createGame(cfg, highScore, rng, topScores, opts) {
   const o = opts || {};
   const built = buildWorlds(cfg);
@@ -41,6 +42,10 @@ function createGame(cfg, highScore, rng, topScores, opts) {
     trailClockMs: 0,
     bestMedal: o.bestMedal || null,
     skin: o.skin || 'classic',
+    trailStyle: o.trailStyle || 'soft',
+    editRow: 'SKIN', // which menu row Left and Right change (Tab cycles SKIN, TRAIL, MODE)
+    playMode: o.playMode || 'journey',
+    worldBests: Object.assign({}, o.worldBests),
     mode: 'Main_Menu',
     ghost: { y: cfg.world.MENU_GHOST_Y, vy: 0 },
     pipes: [],
@@ -98,12 +103,14 @@ function returnToMenu(state) {
 // Resets round values, starts invincibility, applies the jump and restarts the flap animation.
 // The round starts in state.startWorld (from ?world=) with the score at that world's threshold.
 // Every start and restart path calls this. Mutates and returns [{ type: 'jump' }].
+// A single-world mode plays in its world from score 0 and never changes world.
 function startRound(state, rng) { // eslint-disable-line no-unused-vars
-  enterWorld(state, state.startWorld || 0);
+  const single = worlds.singleWorldIndex(state.playMode);
+  enterWorld(state, single === null ? state.startWorld || 0 : single);
   resetEffects(state);
   const cfg = state.cfg;
   state.mode = 'Playing';
-  state.score = worlds.startScoreFor(state.worldIndex, state.baseCfg.world.POINTS_PER_WORLD);
+  state.score = single === null ? worlds.startScoreFor(state.worldIndex, state.baseCfg.world.POINTS_PER_WORLD) : 0;
   state.speed = cfg.speed.INITIAL_SPEED;
   state.pipes = [];
   state.lastGapCenter = null;
@@ -131,6 +138,23 @@ function jump(state) {
 function changeSkin(state, dir) {
   state.skin = cycleSkin(state.skin, dir);
   return [{ type: 'skinChanged', skin: state.skin }];
+}
+
+function changeTrail(state, dir) {
+  state.trailStyle = cycleTrail(state.trailStyle, dir);
+  return [{ type: 'trailChanged', trail: state.trailStyle }];
+}
+
+function changePlayMode(state, dir) {
+  state.playMode = worlds.cyclePlayMode(state.playMode, dir);
+  return [{ type: 'playModeChanged', playMode: state.playMode }];
+}
+
+const EDIT_ROWS = ['SKIN', 'TRAIL', 'MODE'];
+function changeRow(state, dir) {
+  if (state.editRow === 'TRAIL') return changeTrail(state, dir);
+  if (state.editRow === 'MODE') return changePlayMode(state, dir);
+  return changeSkin(state, dir);
 }
 
 // Routes one semantic input by mode (design: Input Routing). Mutates state, returns events.
@@ -162,10 +186,25 @@ function handleInput(state, input, deps) {
       if (!open) state.menu = menu.navigate(state.menu, kind);
       return none;
     }
-    if (kind === 'left' || kind === 'right') return open ? none : changeSkin(state, kind === 'left' ? -1 : 1);
+    if (kind === 'tab') {
+      if (!open) state.editRow = EDIT_ROWS[(EDIT_ROWS.indexOf(state.editRow) + 1) % EDIT_ROWS.length];
+      return none;
+    }
+    if (kind === 'left' || kind === 'right') return open ? none : changeRow(state, kind === 'left' ? -1 : 1);
     if (kind === 'pointer') {
       const hit = menu.hitTest(state.cfg, state, input.x, input.y);
-      if (hit === 'SKIN_PREV' || hit === 'SKIN_NEXT') return changeSkin(state, hit === 'SKIN_PREV' ? -1 : 1);
+      if (hit === 'SKIN_PREV' || hit === 'SKIN_NEXT') {
+        state.editRow = 'SKIN';
+        return changeSkin(state, hit === 'SKIN_PREV' ? -1 : 1);
+      }
+      if (hit === 'MODE_PREV' || hit === 'MODE_NEXT') {
+        state.editRow = 'MODE';
+        return changePlayMode(state, hit === 'MODE_PREV' ? -1 : 1);
+      }
+      if (hit === 'TRAIL_PREV' || hit === 'TRAIL_NEXT') {
+        state.editRow = 'TRAIL';
+        return changeTrail(state, hit === 'TRAIL_PREV' ? -1 : 1);
+      }
       if (hit === 'MUTE') return [{ type: 'toggleMute' }];
       if (hit === 'PAUSE') return none; // nothing to pause yet; the icon is shown so players know it exists
       if (hit === 'PLAY' || hit === 'HIGH_SCORES' || hit === 'BACK') {
@@ -217,6 +256,7 @@ function handleInput(state, input, deps) {
 // World transition: drain (no spawns until the screen is clear), then the title card, then the
 // new world with a short invincibility. The mode stays Playing throughout.
 function stepTransition(state, ms, events) {
+  if (worlds.singleWorldIndex(state.playMode) !== null) return; // one world only
   const P = state.baseCfg.world.POINTS_PER_WORLD;
   if (!state.transition && worlds.worldIndexFor(state.score, P) > state.worldIndex) {
     state.transition = { phase: 'drain', cardMs: 0, nextIndex: state.worldIndex + 1 };
@@ -323,7 +363,8 @@ function update(state, dt, deps) {
   // 5. Worlds: transition, then the speed ramp restarts inside each world.
   stepTransition(state, ms, events);
   const P = state.baseCfg.world.POINTS_PER_WORLD;
-  state.speed = pipes.speedForScore(state.cfg, Math.max(0, state.score - state.worldIndex * P));
+  const worldStart = worlds.singleWorldIndex(state.playMode) === null ? state.worldIndex * P : 0;
+  state.speed = pipes.speedForScore(state.cfg, Math.max(0, state.score - worldStart));
 
   // 6. Collision against the active world config (geometry is the same in every world).
   const hit = collision.detect(state.cfg, state.ghost, state.pipes, state.invincibleMs > 0);
@@ -334,9 +375,16 @@ function update(state, dt, deps) {
     state.crashMs = cfg.timing.CRASH_MS;
     state.lockoutMs = cfg.timing.LOCKOUT_MS;
     state.shakeMs = cfg.fx.SHAKE_MS;
-    state.newHighScore = state.score > state.highScore;
     state.menu = Object.assign({}, state.menu, { selected: 'RESTART' });
-    events.push({ type: 'gameOver', score: state.score, previousHighScore: state.highScore });
+    // A single-world run is scored against that world's own best, not the journey board.
+    if (worlds.singleWorldIndex(state.playMode) === null) {
+      state.newHighScore = state.score > state.highScore;
+      events.push({ type: 'gameOver', score: state.score, previousHighScore: state.highScore });
+    } else {
+      const previous = state.worldBests[state.playMode] || 0;
+      state.newHighScore = state.score > previous;
+      events.push({ type: 'gameOver', score: state.score, previousHighScore: previous, world: state.playMode });
+    }
   }
   return events;
 }

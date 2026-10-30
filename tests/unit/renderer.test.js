@@ -228,18 +228,164 @@ describe('Main_Menu and High_Scores panel', () => {
     expect(t).not.toContain('PLAY');
     expect(t).not.toContain('FLAPPY KIRO');
   });
-  it('panel lists the top scores in rank order instead of BEST', () => {
+  it('panel lists each rank with its score and the world it reached, instead of BEST', () => {
+    const P = cfg.world.POINTS_PER_WORLD;
     const ctx = makeCtx();
-    const s = state('Main_Menu', { topScores: [9, 7, 3, 2, 1] });
+    const scores = [3 * P + 1, 2 * P + 3, P + 1, 4, 3];
+    const s = state('Main_Menu', { topScores: scores });
     s.menu = { selected: 'PLAY', panelOpen: true };
     renderer.drawUi(ctx, s, {}, {});
     const t = texts(ctx);
-    expect(t.filter((x) => /^\d\. /.test(x))).toEqual(['1. 9', '2. 7', '3. 3', '4. 2', '5. 1']);
+    // Each row draws rank, world label, score in that order.
+    const first = t.indexOf('HIGH SCORES') + 1;
+    const rows = [0, 1, 2, 3, 4].map((i) => t.slice(first + i * 3, first + i * 3 + 3));
+    expect(rows.map((r) => r[0])).toEqual(['1', '2', '3', '4', '5']);
+    expect(rows.map((r) => r[2])).toEqual(scores.map(String));
+    expect(t).toEqual(expect.arrayContaining(['SPACE', 'THE CASTLE', 'THE FOREST', 'THE SKY']));
     expect(t).not.toContain('No scores yet');
-    expect(t.some((x) => x.startsWith('BEST'))).toBe(false);
+    expect(t.some((x) => x.startsWith('BEST:'))).toBe(false);
+  });
+  it('panel keeps all five slots drawn and everything above the BACK button', () => {
+    const ctx = makeCtx();
+    const s = state('Main_Menu', { topScores: [9] });
+    s.menu = { selected: 'PLAY', panelOpen: true };
+    renderer.drawUi(ctx, s, {}, {});
+    const back = menu.buttonRect(cfg, 'BACK');
+    const slots = calls(ctx, 'fillRect').filter((e) => e.args[2] === cfg.ui.BUTTON_WIDTH + 96 && e.args[3] === 32);
+    expect(slots).toHaveLength(5);
+    slots.forEach((e) => expect(e.args[1] + e.args[3]).toBeLessThan(back.y));
+    const label = calls(ctx, 'fillText').filter((e) => e.args[0] !== 'BACK').map((e) => e.args[2]);
+    label.forEach((y) => expect(y).toBeLessThan(back.y));
   });
 });
-
+describe('skin and trail rows', () => {
+  const rowTexts = (extra) => {
+    const ctx = makeCtx();
+    renderer.drawUi(ctx, state('Main_Menu', extra), {}, {});
+    return texts(ctx);
+  };
+  it('draws one row for the skin and one for the trail, each naming its current choice', () => {
+    expect(rowTexts({ skin: 'pumpkin', trailStyle: 'ember', bestMedal: 'bronze' }))
+      .toEqual(expect.arrayContaining(['SKIN', 'TRAIL', 'PUMPKIN', 'EMBER']));
+  });
+  it('says which medal a locked choice needs, per row', () => {
+    const t = rowTexts({ skin: 'gold', trailStyle: 'rainbow', bestMedal: null });
+    expect(t).toEqual(expect.arrayContaining(['GOLD - GOLD MEDAL', 'RAINBOW - SILVER MEDAL']));
+    const open = rowTexts({ skin: 'gold', trailStyle: 'rainbow', bestMedal: 'gold' });
+    expect(open).toEqual(expect.arrayContaining(['GOLD', 'RAINBOW']));
+  });
+  it('shows the previous and next choice around the current one in both rows', () => {
+    const ctx = makeCtx();
+    renderer.drawUi(ctx, state('Main_Menu', { skin: 'classic', trailStyle: 'soft' }), {}, {});
+    const cx = cfg.world.WIDTH / 2;
+    // Each preview draws a 22 px outline square: centred on its slot in the skin row, 14 px right of it in the trail row.
+    const slots = calls(ctx, 'fillRect').filter((e) => e.args[2] === 22 && e.args[3] === 22).map((e) => e.args[0] + 11);
+    for (const x of [cx - 110, cx, cx + 110]) {
+      expect(slots).toContain(x);
+      expect(slots).toContain(x + 14);
+    }
+    // The neighbours are dimmed, the current one is not.
+    const dimmed = calls(ctx, 'fillRect').filter((e) => e.args[2] === 22 && e.props.globalAlpha === 0.6);
+    expect(dimmed).toHaveLength(4);
+  });
+  it('points each arrow the way it moves the row', () => {
+    const ctx = makeCtx();
+    renderer.drawUi(ctx, state('Main_Menu'), {}, {});
+    const moves = calls(ctx, 'moveTo').map((e) => e.args);
+    const lines = calls(ctx, 'lineTo').map((e) => e.args);
+    for (const [name, dir] of [['SKIN_PREV', -1], ['SKIN_NEXT', 1], ['TRAIL_PREV', -1], ['TRAIL_NEXT', 1]]) {
+      const r = menu.buttonRect(cfg, name);
+      const mx = r.x + r.w / 2;
+      const i = moves.findIndex(([x, y]) => x === mx - dir * 5 && y === r.y + r.h * 0.25);
+      expect(i).toBeGreaterThanOrEqual(0);
+      expect(lines[2 * i][0]).toBe(mx + dir * 5); // tip
+    }
+  });
+  it('draws the real sprite in the previews when it is loaded', () => {
+    const ctx = makeCtx();
+    renderer.drawUi(ctx, state('Main_Menu'), { sprite }, {});
+    expect(calls(ctx, 'drawImage')).toHaveLength(6);
+  });
+  it('marks the row that Left and Right will change', () => {
+    const marked = (editRow) => {
+      const ctx = makeCtx();
+      renderer.drawUi(ctx, state('Main_Menu', { editRow }), {}, {});
+      return calls(ctx, 'strokeRect').filter((e) => e.props.strokeStyle === renderer.PALETTE.highlight).map((e) => e.args[1]);
+    };
+    expect(marked('SKIN')).toEqual([cfg.ui.SKIN_ROW_Y + 1]);
+    expect(marked('TRAIL')).toEqual([cfg.ui.TRAIL_ROW_Y + 1]);
+  });
+  it('keeps the arrow squares where the hit test expects them', () => {
+    const ctx = makeCtx();
+    renderer.drawUi(ctx, state('Main_Menu'), {}, {});
+    const rects = calls(ctx, 'fillRect').map((e) => e.args);
+    for (const name of ['SKIN_PREV', 'SKIN_NEXT', 'TRAIL_PREV', 'TRAIL_NEXT']) {
+      const r = menu.buttonRect(cfg, name);
+      expect(rects.some(([x, y, w, h]) => x === r.x && y === r.y && w === r.w && h === r.h)).toBe(true);
+    }
+  });
+  it('keeps both rows between the title and Ghosty', () => {
+    const rowBottom = cfg.ui.TRAIL_ROW_Y + cfg.ui.ROW_HEIGHT + 4;
+    expect(rowBottom).toBeLessThan(cfg.world.MENU_GHOST_Y - 16);
+    expect(cfg.ui.SKIN_ROW_Y).toBeGreaterThan(140 + 30);
+    expect(cfg.ui.SKIN_ROW_Y + cfg.ui.ROW_HEIGHT + 4).toBeLessThanOrEqual(cfg.ui.TRAIL_ROW_Y);
+  });
+});
+describe('play mode on the menu and game over', () => {
+  it('names the mode inside PLAY and draws an arrow each side of the button', () => {
+    const ctx = makeCtx();
+    renderer.drawUi(ctx, state('Main_Menu', { playMode: 'forest', worldBests: { forest: 4 } }), {}, {});
+    expect(texts(ctx)).toEqual(expect.arrayContaining(['PLAY', 'FOREST ONLY', 'FOREST ONLY BEST: 4']));
+    const rects = calls(ctx, 'fillRect').map((e) => e.args);
+    for (const name of ['MODE_PREV', 'MODE_NEXT']) {
+      const r = menu.buttonRect(cfg, name);
+      expect(rects.some(([x, y, w, h]) => x === r.x && y === r.y && w === r.w && h === r.h)).toBe(true);
+    }
+    const play = menu.buttonRect(cfg, 'PLAY');
+    expect(menu.buttonRect(cfg, 'MODE_PREV').x + cfg.ui.ICON_SIZE).toBeLessThan(play.x - 18);
+    expect(menu.buttonRect(cfg, 'MODE_NEXT').x).toBeGreaterThan(play.x + play.w + 18);
+  });
+  it('marks a selected PLAY with its border only, so the mode arrows are the only triangles beside it', () => {
+    const ctx = makeCtx();
+    const play = menu.buttonRect(cfg, 'PLAY');
+    renderer.drawUi(ctx, state('Main_Menu'), {}, {});
+    const nearPlay = calls(ctx, 'moveTo').map((e) => e.args)
+      .filter(([x, y]) => y > play.y - 8 && y < play.y + play.h && (x < play.x || x > play.x + play.w));
+    // Only the two mode arrows start a triangle beside PLAY.
+    expect(nearPlay).toHaveLength(2);
+  });
+  it('a single-world game over shows the world bests instead of the journey top 5 and medals', () => {
+    const ctx = makeCtx();
+    renderer.drawUi(ctx, state('Game_Over', { crashMs: 0, score: 3, playMode: 'castle', worldBests: { castle: 9, sky: 2 } }), {}, {});
+    const t = texts(ctx);
+    expect(t).toEqual(expect.arrayContaining(['WORLD BESTS', 'CASTLE ONLY', 'SKY', 'FOREST', 'CASTLE', 'SPACE', '9']));
+    expect(t).not.toContain('TOP 5');
+  });
+});
+describe('every world draws', () => {
+  it('renders a full frame in each world kind and mode without throwing', () => {
+    for (let worldIndex = 0; worldIndex < 8; worldIndex++) {
+      for (const mode of ['Main_Menu', 'Playing', 'Paused', 'Game_Over']) {
+        const ctx = makeCtx();
+        const s = state(mode, { worldIndex, crashMs: 0, pipes: [{ x: 200, gapCenter: 300, scored: false }] });
+        expect(() => renderer.render(ctx, s, { sprite, sheet: null }, {})).not.toThrow();
+        expect(calls(ctx, 'fillRect').length).toBeGreaterThan(10);
+      }
+    }
+  });
+  it('keeps backdrop scenery out of the obstacle and ground colours', () => {
+    for (let kind = 0; kind < 4; kind++) {
+      const ctx = makeCtx();
+      renderer.render(ctx, state('Playing', { worldIndex: kind }), { sprite, sheet: null }, {});
+      const pal = renderer.PALETTES[kind];
+      const firstPipe = ctx.log.findIndex((e) => e.op === 'fillRect' && e.props.fillStyle === pal.pipe);
+      const firstGround = ctx.log.findIndex((e) => e.op === 'fillRect' && e.props.fillStyle === pal.ground);
+      expect(firstPipe === -1 || firstPipe > 0).toBe(true);
+      const scenery = ctx.log.slice(0, firstGround === -1 ? ctx.log.length : firstGround);
+      expect(scenery.some((e) => e.op === 'fillRect' && e.props.fillStyle === pal.pipe && e.props.globalAlpha === 1 && e.args[3] > 100)).toBe(false);
+    }
+  });
+});
 describe('Paused and Game_Over', () => {
   it('paused dims the screen and shows PAUSED, the score and the resume hint', () => {
     const ctx = makeCtx();

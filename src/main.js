@@ -5,16 +5,17 @@
 // Sounds have one loading path: assets.loadAssets creates the audio elements (no <audio> tags in index.html).
 // The loop never waits for assets; sprites and sounds appear as they finish loading.
 import { loadConfig, DEFAULT_CONFIG } from './config.js';
-import { buildWorldConfigs, parseStartWorld } from './worlds.js';
+import { WORLDS, buildWorldConfigs, parseStartWorld, worldKind, isPlayMode } from './worlds.js';
 import { medalFor, betterMedal, isMedal } from './medals.js';
-import { SKINS, isUnlocked } from './skins.js';
+import { SKINS, TRAILS, isUnlocked, isTrailUnlocked } from './skins.js';
 import { clampDt } from './physics.js';
 import { createGame, handleInput, update } from './game.js';
 import {
   load as loadHighScore, loadTop, recordIfHigher, recordTop,
-  loadBestMedal, recordBestMedal, loadSkin, saveSkin,
+  loadBestMedal, recordBestMedal, loadSkin, saveSkin, loadTrail, saveTrail,
+  loadPlayMode, savePlayMode, loadWorldBests, recordWorldBest,
 } from './scoreStore.js';
-import { createAudioPlayer, soundsFor, musicFor } from './audio.js';
+import { createAudioPlayer, soundsFor, musicFor, ambientFor } from './audio.js';
 import { loadAssets } from './assets.js';
 import { attachInput } from './input.js';
 import { render, fitCanvas } from './renderer.js';
@@ -70,19 +71,24 @@ export function startApp(opts) {
   const start = parseStartWorld(search);
   if (start.warning && log) log.warn(start.warning);
   const skinIds = new Set(SKINS.map((k) => k.id));
+  const trailIds = new Set(TRAILS.map((k) => k.id));
   const topScores = loadTop(storage);
   // BEST is the larger of the legacy single score and the top of the list.
   const state = createGame(cfg, Math.max(loadHighScore(storage), topScores[0] || 0), rng, topScores, {
     startWorld: start.index,
     bestMedal: loadBestMedal(storage, isMedal),
     skin: loadSkin(storage, (id) => skinIds.has(id)) || 'classic',
+    trailStyle: loadTrail(storage, (id) => trailIds.has(id)) || 'soft',
+    playMode: loadPlayMode(storage, isPlayMode) || 'journey',
+    worldBests: loadWorldBests(storage, WORLDS.map((w) => w.id)),
   });
   const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
 
   const assets = { sprite: null, sheet: null };
   const soundEls = { jump: null, score: null, game_over: null };
-  const musicEls = { menu: null, game: null };
-  const audio = createAudioPlayer(soundEls, musicEls); // keeps both references, filled once loaded
+  const musicEls = { menu: null, sky: null, forest: null, castle: null, space: null };
+  const ambientEls = { wind: null };
+  const audio = createAudioPlayer(soundEls, musicEls, ambientEls); // keeps the references, filled once loaded
   const createCanvas = doc && doc.createElement
     ? (w, h) => {
         const c = doc.createElement('canvas');
@@ -99,6 +105,7 @@ export function startApp(opts) {
       assets.sheet = a.sheet;
       Object.assign(soundEls, a.sounds);
       Object.assign(musicEls, a.music);
+      Object.assign(ambientEls, a.ambient);
       audio.resumeMusic(); // start the current track now that it exists
       return assets;
     })
@@ -124,6 +131,8 @@ export function startApp(opts) {
     events.forEach((ev) => {
       if (ev.type === 'toggleMute') {
         audio.toggleMute();
+      } else if (ev.type === 'gameOver' && ev.world) {
+        state.worldBests = recordWorldBest(storage, ev.world, ev.score, state.worldBests);
       } else if (ev.type === 'gameOver') {
         state.highScore = recordIfHigher(storage, ev.score, state.highScore);
         state.topScores = recordTop(storage, ev.score, state.topScores);
@@ -131,6 +140,10 @@ export function startApp(opts) {
         state.bestMedal = recordBestMedal(storage, medal, state.bestMedal, betterMedal);
       } else if (ev.type === 'skinChanged') {
         if (isUnlocked(ev.skin, state.bestMedal)) saveSkin(storage, ev.skin);
+      } else if (ev.type === 'playModeChanged') {
+        savePlayMode(storage, ev.playMode);
+      } else if (ev.type === 'trailChanged') {
+        if (isTrailUnlocked(ev.trail, state.bestMedal)) saveTrail(storage, ev.trail);
       }
     });
   }
@@ -146,8 +159,11 @@ export function startApp(opts) {
       processEvents(handleInput(state, queue.shift(), { rng }));
     }
     processEvents(update(state, dt, { rng }));
-    const music = musicFor(state.mode);
+    const kind = worldKind(state.worldIndex || 0);
+    const music = musicFor(state.mode, kind);
     audio.setMusic(music.track, music.paused);
+    const bed = ambientFor(state.mode, kind, state.wind && state.wind.phase);
+    audio.setAmbient(bed.track, bed.volume);
 
     if (ctx) render(ctx, state, assets, { muted: audio.isMuted(), createCanvas });
   }

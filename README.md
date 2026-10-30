@@ -57,7 +57,7 @@ npm test
 - After a crash, input is ignored for 1 s (`lockoutMs`). The Game Over panel appears 0.5 s in, so it stays readable for 0.5 s before input unlocks. `lockoutMs` must be greater than `crashMs`.
 - Switching tabs pauses the game.
 - Your best score and your top 5 scores are kept in `localStorage`. The High Scores panel and the Game Over panel show the top 5.
-- Calm music plays on the menu and faster music during a round. It pauses with the game and stops at game over. Mute (M) silences music too.
+- Each screen has its own looping theme: a bouncy menu tune, a breezy Sky theme, a folk Forest theme (with wind that swells with the gusts), a Castle march and a slow synth groove in Space. Music pauses with the game and stops at game over. Mute (M) silences music too.
 
 ## Project layout
 
@@ -78,7 +78,7 @@ src/
   assets.js           independent image and sound loading with fallbacks
   input.js            keyboard, mouse, touch and visibility wiring
   renderer.js         all canvas drawing
-assets/               ghosty.png, jump.wav, score.wav, game_over.wav, music-menu.wav, music-game.wav
+assets/               ghosty.png, jump.wav, score.wav, game_over.wav, music-menu.wav, music-sky.wav, music-forest.wav, music-castle.wav, music-space.wav, wind.wav
 mcp/                  local MCP servers: audio (sound generation) and leaderboard
 scripts/              generate-audio.js (builds score.wav and the music loops)
 tests/
@@ -343,7 +343,8 @@ Each asset loads on its own. One failure never blocks the game or the other asse
 | `assets/ghosty.png` | A 24 x 24 white square is drawn in its place |
 | `assets/ghosty-sheet.png` (optional sprite sheet) | Transforms of `ghosty.png` are used. This is expected today, since the sheet doesn't exist yet |
 | `jump.wav`, `score.wav`, `game_over.wav` | That sound is silent |
-| `music-menu.wav`, `music-game.wav` | No music; the game is otherwise unaffected |
+| `music-*.wav` (menu, sky, forest, castle, space) | No music for that screen or world; the game is otherwise unaffected |
+| `wind.wav` | No forest wind; the game is otherwise unaffected |
 | `localStorage` | The high score reads as 0 and isn't saved |
 
 `assets/score.wav` is generated:
@@ -385,7 +386,8 @@ Every `pointsPerWorld` points (default 5) the run moves to the next world, with 
 After Space the journey loops (LOOP 2, LOOP 3, ...), about 10% faster each time. Each world starts a little faster than the last and ramps up inside the world.
 
 - **Medals** on the game-over panel: Bronze, Silver, Gold and Platinum at 1, 2, 3 and 4 × `pointsPerWorld`.
-- **Skins**, chosen with Left/Right or the arrows on the main menu, unlock with your best medal: Pumpkin (Bronze), Rainbow trail (Silver), Gold (Gold), Starfield (Platinum).
+- **Play modes:** the arrows beside PLAY (or Tab to the mode, then Left/Right) choose ALL WORLDS, the journey through every world, or one world on its own (SKY ONLY, FOREST ONLY, CASTLE ONLY, SPACE ONLY). A single-world run starts at 0, never changes world and keeps its own best per world; medals and the top 5 count journey runs only.
+- **Skins and trails** are two rows on the main menu, each showing the previous, current and next choice. Click an arrow, or press Tab to pick the row and Left/Right to change it. They unlock with your best medal. Skins: Pumpkin (Bronze), Gold (Gold), Starfield (Platinum). Trails: Ember (Bronze), Rainbow (Silver), Stardust (Gold).
 - **Testing and recording:** `?world=sky|forest|castle|space` starts a round in that world (the score starts at its threshold), and `?pointsPerWorld=2` makes worlds short. Example: `http://localhost:8000/?world=forest&pointsPerWorld=3`.
 
 World logic lives in `src/worlds.js` (table, per-world configs, loops), `src/twists.js` (wind, moving gaps), `src/particles.js`, `src/medals.js`, `src/skins.js` and `src/worldArt.js` (per-world drawing). The spec is in `.kiro/specs/ghostys-journey/`.
@@ -416,13 +418,13 @@ Two local MCP servers in `mcp/` are registered in `.kiro/settings/mcp.json`. Bot
 
 | Server | Tools | Data |
 |---|---|---|
-| `flappy-audio` (`mcp/audio/server.js`) | `list_presets`, `generate_sound` (`flap`, `score`, `hit`, `music_menu`, `music_game`, optional `seed` and `file`) | Writes WAVs to `assets/generated/` (gitignored), or `AUDIO_OUT_DIR` inside the project |
+| `flappy-audio` (`mcp/audio/server.js`) | `list_presets`, `generate_sound` (`flap`, `score`, `hit`, `wind`, `music_menu`, `music_sky`, `music_forest`, `music_castle`, `music_space`, optional `seed` and `file`) | Writes WAVs to `assets/generated/` (gitignored), or `AUDIO_OUT_DIR` inside the project |
 | `flappy-leaderboard` (`mcp/leaderboard/server.js`) | `submit_score`, `get_leaderboard`, `get_player`, `list_achievements` | `data/leaderboard.json` (gitignored), or `LEADERBOARD_FILE` |
 
 The audio presets are synthesised in `mcp/audio/synth.js`. The same code builds the game's generated sounds:
 
 ```bash
-npm run generate-audio   # writes assets/score.wav, assets/music-menu.wav, assets/music-game.wav
+npm run generate-audio   # writes assets/score.wav, assets/wind.wav and the five assets/music-*.wav themes
 ```
 
 ## Contributing

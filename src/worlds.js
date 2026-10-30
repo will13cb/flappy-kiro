@@ -3,7 +3,7 @@
 import { mergeConfig, validateConfig } from './config.js';
 
 // Overlays scale the base (URL-overridden) values, so ?gravity= etc. still apply in every world.
-// Only physics, speed and twist values change; pipe geometry is identical everywhere.
+// Only physics, speed and twist values change; 
 // gapShiftScale narrows how far consecutive gaps may jump, so the stronger twists stay reachable.
 const WORLDS = [
   { id: 'sky', title: 'THE SKY', gravityScale: 1, jumpScale: 1, speedScale: 1, gapShiftScale: 1, twist: {} },
@@ -22,6 +22,22 @@ const loopOf = (index) => Math.floor(index / WORLDS.length);
 const worldIndexFor = (score, P) => Math.floor(Math.max(0, score) / P);
 const startScoreFor = (index, P) => index * P;
 const worldOf = (index) => WORLDS[worldKind(index)];
+
+// Play modes on the main menu: the journey through every world, or one world on its own.
+// A single-world run never changes world and starts at score 0.
+const PLAY_MODES = [{ id: 'journey', name: 'ALL WORLDS' }].concat(
+  WORLDS.map((w) => ({ id: w.id, name: w.title.replace(/^THE /, '') + ' ONLY' })));
+const isPlayMode = (id) => PLAY_MODES.some((m) => m.id === id);
+const playModeById = (id) => PLAY_MODES.find((m) => m.id === id) || PLAY_MODES[0];
+// World index a single-world mode plays in, or null for the journey.
+const singleWorldIndex = (modeId) => {
+  const i = WORLDS.findIndex((w) => w.id === modeId);
+  return i < 0 ? null : i;
+};
+function cyclePlayMode(id, dir) {
+  const i = Math.max(0, PLAY_MODES.findIndex((m) => m.id === id));
+  return PLAY_MODES[(i + dir + PLAY_MODES.length) % PLAY_MODES.length].id;
+}
 
 // ?world=sky|forest|castle|space -> { index, warning }. Anything else starts in Sky.
 function parseStartWorld(search) {
@@ -90,6 +106,6 @@ function configFor(built, index) {
 }
 
 export {
-  WORLDS, worldKind, loopOf, worldIndexFor, startScoreFor, worldOf,
+  WORLDS, PLAY_MODES, isPlayMode, playModeById, singleWorldIndex, cyclePlayMode, worldKind, loopOf, worldIndexFor, startScoreFor, worldOf,
   parseStartWorld, titleFor, worldConfig, buildWorldConfigs, configFor,
 };

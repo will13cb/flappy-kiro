@@ -1,7 +1,7 @@
 // Validates: Requirements 11.3, 11.4, 19.5, 19.6
 import { describe, it, expect } from 'vitest';
 
-import { createAudioPlayer, soundsFor, musicFor, SOUND_NAMES, MUSIC_VOLUME } from '../../src/audio.js';
+import { createAudioPlayer, soundsFor, musicFor, ambientFor, SOUND_NAMES, MUSIC_VOLUME, WIND_VOLUME, BED_EASE } from '../../src/audio.js';
 
 function fakeEl(opts = {}) {
   const el = {
@@ -115,32 +115,61 @@ describe('music', () => {
 
   it('maps modes to tracks', () => {
     expect(musicFor('Main_Menu')).toEqual({ track: 'menu', paused: false });
-    expect(musicFor('Playing')).toEqual({ track: 'game', paused: false });
-    expect(musicFor('Paused')).toEqual({ track: 'game', paused: true });
-    expect(musicFor('Game_Over')).toEqual({ track: null, paused: false });
+    expect(musicFor('Playing', 0)).toEqual({ track: 'sky', paused: false });
+    expect(musicFor('Playing', 1)).toEqual({ track: 'forest', paused: false });
+    expect(musicFor('Playing', 2)).toEqual({ track: 'castle', paused: false });
+    expect(musicFor('Playing', 3)).toEqual({ track: 'space', paused: false });
+    expect(musicFor('Paused', 2)).toEqual({ track: 'castle', paused: true });
+    expect(musicFor('Game_Over', 2)).toEqual({ track: null, paused: false });
+  });
+  it('plays wind only in the Forest while Playing, louder through a gust', () => {
+    expect(ambientFor('Playing', 1, 'calm')).toEqual({ track: 'wind', volume: WIND_VOLUME.calm });
+    expect(ambientFor('Playing', 1, 'telegraph').volume).toBeGreaterThan(WIND_VOLUME.calm);
+    expect(ambientFor('Playing', 1, 'gust').volume).toBeGreaterThan(ambientFor('Playing', 1, 'telegraph').volume);
+    for (const [mode, kind] of [['Playing', 0], ['Playing', 2], ['Paused', 1], ['Game_Over', 1], ['Main_Menu', 1]]) {
+      expect(ambientFor(mode, kind, 'gust')).toEqual({ track: null, volume: 0 });
+    }
+  });
+  it('loops the wind, fades it in, stops it on leaving and silences it when muted', () => {
+    const wind = track();
+    const p = createAudioPlayer({}, {}, { wind });
+    p.setAmbient('wind', 0.8);
+    expect(wind).toMatchObject({ plays: 1, loop: true });
+    expect(wind.volume).toBeCloseTo(0.8 * BED_EASE);
+    for (let i = 0; i < 400; i++) p.setAmbient('wind', 0.8);
+    expect(wind.volume).toBeCloseTo(0.8, 2);
+    p.toggleMute();
+    expect(wind.paused).toBe(true);
+    p.setAmbient('wind', 0.8);
+    expect(wind.plays).toBe(1);
+    p.toggleMute();
+    expect(wind.plays).toBe(2);
+    p.setAmbient(null, 0);
+    expect(wind.paused).toBe(true);
+    expect(() => createAudioPlayer().setAmbient('wind', 1)).not.toThrow();
   });
 
   it('loops the wanted track, switches from the start, and is a no-op when unchanged', () => {
     const menu = track();
     const game = track();
-    const p = createAudioPlayer({}, { menu, game });
+    const p = createAudioPlayer({}, { menu, sky: game });
     p.setMusic('menu', false);
     p.setMusic('menu', false);
     expect(menu).toMatchObject({ plays: 1, loop: true, volume: MUSIC_VOLUME });
     menu.currentTime = 5;
-    p.setMusic('game', false);
+    p.setMusic('sky', false);
     expect(menu).toMatchObject({ paused: true, currentTime: 0 });
     expect(game.plays).toBe(1);
   });
 
   it('pausing keeps the position; null stops the track', () => {
     const game = track();
-    const p = createAudioPlayer({}, { game });
-    p.setMusic('game', false);
+    const p = createAudioPlayer({}, { sky: game });
+    p.setMusic('sky', false);
     game.currentTime = 3;
-    p.setMusic('game', true);
+    p.setMusic('sky', true);
     expect(game).toMatchObject({ paused: true, currentTime: 3 });
-    p.setMusic('game', false);
+    p.setMusic('sky', false);
     expect(game.plays).toBe(2);
     p.setMusic(null, false);
     expect(game).toMatchObject({ paused: true, currentTime: 0 });
@@ -173,9 +202,9 @@ describe('music', () => {
   });
 
   it('missing or failing music elements never throw', () => {
-    const p = createAudioPlayer({}, { game: { play() { throw new Error('blocked'); }, pause() {} } });
+    const p = createAudioPlayer({}, { sky: { play() { throw new Error('blocked'); }, pause() {} } });
     expect(() => p.setMusic('menu', false)).not.toThrow();
-    expect(() => p.setMusic('game', false)).not.toThrow();
-    expect(() => createAudioPlayer().setMusic('game', false)).not.toThrow();
+    expect(() => p.setMusic('sky', false)).not.toThrow();
+    expect(() => createAudioPlayer().setMusic('sky', false)).not.toThrow();
   });
 });

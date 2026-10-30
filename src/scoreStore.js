@@ -83,9 +83,13 @@ function recordTop(storage, score, list) {
   saveTop(storage, next);
   return next;
 }
-// Best medal ever and the chosen skin, stored as plain strings next to the high score.
+// Best medal ever and the chosen skin and trail, stored as plain strings next to the high score.
 const MEDAL_KEY = "flappyKiro.bestMedal";
 const SKIN_KEY = "flappyKiro.skin";
+const TRAIL_KEY = "flappyKiro.trail";
+const MODE_KEY = "flappyKiro.playMode";
+// Best score per single-world mode: a JSON object of world id -> non-negative integer.
+const WORLD_BESTS_KEY = "flappyKiro.worldBests";
 function readKey(storage, key) {
   try {
     return storage.getItem(key);
@@ -117,8 +121,41 @@ function loadSkin(storage, isValid) {
   return isValid(raw) ? raw : null;
 }
 const saveSkin = (storage, id) => writeKey(storage, SKIN_KEY, id);
+function loadTrail(storage, isValid) {
+  const raw = readKey(storage, TRAIL_KEY);
+  return isValid(raw) ? raw : null;
+}
+const saveTrail = (storage, id) => writeKey(storage, TRAIL_KEY, id);
+function loadPlayMode(storage, isValid) {
+  const raw = readKey(storage, MODE_KEY);
+  return isValid(raw) ? raw : null;
+}
+const savePlayMode = (storage, id) => writeKey(storage, MODE_KEY, id);
+// ids: the world ids to keep. Corrupt data or bad values read as 0 for that world.
+function loadWorldBests(storage, ids) {
+  let parsed = null;
+  try {
+    parsed = JSON.parse(readKey(storage, WORLD_BESTS_KEY));
+  } catch (e) {
+    parsed = null;
+  }
+  const out = {};
+  ids.forEach((id) => {
+    const v = parsed && typeof parsed === 'object' ? parsed[id] : undefined;
+    out[id] = Number.isSafeInteger(v) && v >= 0 ? v : 0;
+  });
+  return out;
+}
+// Saves and returns new bests when score beats the stored one for that world; otherwise untouched.
+function recordWorldBest(storage, id, score, bests) {
+  if (!(score > (bests[id] || 0))) return bests;
+  const next = Object.assign({}, bests, { [id]: score });
+  writeKey(storage, WORLD_BESTS_KEY, JSON.stringify(next));
+  return next;
+}
 export {
   KEY as HIGH_SCORE_KEY, TOP_KEY as TOP_SCORES_KEY, TOP_SIZE, parseHighScore, load, save, recordIfHigher,
   parseTopScores, insertScore, loadTop, saveTop, recordTop,
-  MEDAL_KEY, SKIN_KEY, loadBestMedal, recordBestMedal, loadSkin, saveSkin,
+  MEDAL_KEY, SKIN_KEY, TRAIL_KEY, loadBestMedal, recordBestMedal, loadSkin, saveSkin, loadTrail, saveTrail,
+  MODE_KEY, WORLD_BESTS_KEY, loadPlayMode, savePlayMode, loadWorldBests, recordWorldBest,
 };

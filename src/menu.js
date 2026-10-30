@@ -2,15 +2,19 @@
 // Pure functions on plain objects. MenuState: { selected: 'PLAY' | 'HIGH_SCORES', panelOpen: boolean }
 
 const MENU_BUTTONS = ['PLAY', 'HIGH_SCORES'];
-// Skin selector arrows on the main menu (left and right of the skin name).
-const SKIN_ARROWS = ['SKIN_PREV', 'SKIN_NEXT'];
+// Arrows of the skin row and the trail row on the main menu (left and right of the choices).
+const ROW_ARROWS = ['SKIN_PREV', 'SKIN_NEXT', 'TRAIL_PREV', 'TRAIL_NEXT'];
+// Play-mode arrows either side of the PLAY button.
+const MODE_ARROWS = ['MODE_PREV', 'MODE_NEXT'];
+
+const ARROW_TOP = 14; // arrow squares sit this far below the top of their row
 
 function initialMenu() {
   return { selected: 'PLAY', panelOpen: false };
 }
 
 function buttonsFor(mode, menu) {
-  if (mode === 'Main_Menu') return menu && menu.panelOpen ? ['BACK'] : MENU_BUTTONS.concat(SKIN_ARROWS);
+  if (mode === 'Main_Menu') return menu && menu.panelOpen ? ['BACK'] : MENU_BUTTONS.concat(ROW_ARROWS, MODE_ARROWS);
   if (mode === 'Game_Over') return ['RESTART', 'MENU'];
   return [];
 }
@@ -23,11 +27,17 @@ function buttonRect(cfg, name) {
   else if (name === 'BACK') y = u.PANEL_BUTTON_Y;
   else if (name === 'RESTART') y = u.GAME_OVER_BUTTON_Y;
   else if (name === 'MENU') y = u.GAME_OVER_BUTTON_Y + u.BUTTON_HEIGHT + u.BUTTON_GAP;
-  else if (name === 'SKIN_PREV' || name === 'SKIN_NEXT') {
+  else if (ROW_ARROWS.includes(name)) {
     const cx = cfg.world.WIDTH / 2;
     const s = u.ICON_SIZE;
-    const x = name === 'SKIN_PREV' ? cx - u.SKIN_ARROW_OFFSET - s : cx + u.SKIN_ARROW_OFFSET;
-    return { x, y: u.SKIN_ARROW_Y, w: s, h: s };
+    const isPrev = name.endsWith('PREV');
+    const rowY = name.startsWith('SKIN') ? u.SKIN_ROW_Y : u.TRAIL_ROW_Y;
+    const x = isPrev ? cx - u.ROW_ARROW_OFFSET - s : cx + u.ROW_ARROW_OFFSET;
+    return { x, y: rowY + ARROW_TOP, w: s, h: s };
+  } else if (MODE_ARROWS.includes(name)) {
+    const s = u.ICON_SIZE;
+    const x = name === 'MODE_PREV' ? u.BUTTON_X - u.MODE_ARROW_GAP - s : u.BUTTON_X + u.BUTTON_WIDTH + u.MODE_ARROW_GAP;
+    return { x, y: u.MENU_BUTTON_Y + (u.BUTTON_HEIGHT - s) / 2, w: s, h: s };
   } else return null;
   return { x: u.BUTTON_X, y, w: u.BUTTON_WIDTH, h: u.BUTTON_HEIGHT };
 }

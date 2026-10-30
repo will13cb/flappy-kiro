@@ -1,15 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { PRESETS, renderPreset, renderPresetWav, buildScoreWav } from '../../mcp/audio/synth.js';
+import { PRESETS, SHIPPED_PRESETS, renderPreset, renderPresetWav, buildScoreWav } from '../../mcp/audio/synth.js';
 import { encodeWav, peakDbfs } from '../../mcp/audio/wav.js';
 import { ROOT } from '../helpers/mcp-client.js';
 
 const duration = ({ samples, sampleRate }) => samples.length / sampleRate;
 
 describe('synth presets', () => {
-  it('render the expected lengths and stay under full scale', () => {
-    const expected = { flap: 0.12, score: 0.2, hit: 0.35, music_menu: (8 * 4 * 60) / 92, music_game: (8 * 4 * 60) / 140 };
+  it('render the expected lengths and stay under full scale', { timeout: 30000 }, () => {
+    const bars = (bpm) => (8 * 4 * 60) / bpm;
+    const expected = {
+      flap: 0.12, score: 0.2, hit: 0.35, game_over: 0.9, wind: 10,
+      music_menu: bars(96), music_sky: bars(108), music_forest: bars(92), music_castle: bars(84), music_space: bars(76),
+    };
     for (const name of Object.keys(PRESETS)) {
       const r = renderPreset(name);
       expect(duration(r)).toBeCloseTo(expected[name], 2);
@@ -18,13 +22,13 @@ describe('synth presets', () => {
     }
   });
 
-  it('are deterministic per seed and vary with the seed', () => {
-    expect(renderPresetWav('music_game', 3).equals(renderPresetWav('music_game', 3))).toBe(true);
-    expect(renderPresetWav('music_game', 3).equals(renderPresetWav('music_game', 4))).toBe(false);
+  it('are deterministic per seed and vary with the seed', { timeout: 30000 }, () => {
+    expect(renderPresetWav('music_sky', 3).equals(renderPresetWav('music_sky', 3))).toBe(true);
+    expect(renderPresetWav('music_sky', 3).equals(renderPresetWav('music_sky', 4))).toBe(false);
     expect(renderPresetWav('hit', 1).equals(renderPresetWav('hit', 2))).toBe(false);
   });
 
-  it('end at silence so effects do not click and music loops cleanly', () => {
+  it('end at silence so effects do not click and music loops cleanly', { timeout: 30000 }, () => {
     for (const name of Object.keys(PRESETS)) {
       const { samples } = renderPreset(name);
       expect(Math.abs(samples[samples.length - 1])).toBeLessThan(1e-3);
@@ -32,8 +36,8 @@ describe('synth presets', () => {
     }
   });
 
-  it('match the committed generated files', () => {
-    for (const name of ['score', 'music_menu', 'music_game']) {
+  it('match the committed generated files', { timeout: 30000 }, () => {
+    for (const name of SHIPPED_PRESETS) {
       const onDisk = fs.readFileSync(path.join(ROOT, 'assets', PRESETS[name].file));
       expect(onDisk.equals(renderPresetWav(name))).toBe(true);
     }

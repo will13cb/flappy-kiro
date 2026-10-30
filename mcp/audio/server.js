@@ -20,7 +20,7 @@ export function createAudioServer({ outDir }) {
   const tools = [
     {
       name: 'list_presets',
-      description: 'Sound presets this server can render: flap, score, hit, menu music and game music.',
+      description: 'Sound presets this server can render: flap, score, hit, forest wind, and a calm theme for the menu and each world.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       handler: () =>
         Object.entries(PRESETS).map(([preset, p]) => ({

@@ -10,6 +10,7 @@ const KEY_MAP = {
   ArrowDown: 'down',
   ArrowLeft: 'left',
   ArrowRight: 'right',
+  Tab: 'tab',
   p: 'pause',
   P: 'pause',
   Escape: 'pause',
@@ -32,7 +33,7 @@ function mapKey(event) {
   let kind = KEY_MAP[key];
   if (!kind && event.code === 'Space') kind = 'space';
   if (!kind) return null;
-  return { input: kind, preventDefault: kind === 'space' };
+  return { input: kind, preventDefault: kind === 'space' || kind === 'tab' };
 }
 
 // Wires DOM events. opts: { cfg, canvas, doc, win, onInput(input), onToggleMute() }.

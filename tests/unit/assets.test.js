@@ -59,7 +59,8 @@ describe('loadAssets fallbacks over all 16 failure subsets', () => {
       expect(res.sheet).not.toBeNull();
       expect(Object.keys(res.sounds).sort()).toEqual(['game_over', 'jump', 'score']);
       expect(res.music.menu).not.toBeNull();
-      expect(res.music.game).not.toBeNull();
+      for (const name of ['sky', 'forest', 'castle', 'space']) expect(res.music[name]).not.toBeNull();
+      expect(res.ambient.wind).not.toBeNull();
     });
   }
 });
@@ -90,7 +91,9 @@ describe('sheet fallback', () => {
 describe('missing browser APIs and throwing factories', () => {
   it('resolves all null without deps when Image/Audio globals are absent', async () => {
     const res = await loadAssets(cfg);
-    expect(res).toEqual({ sprite: null, sheet: null, sounds: { jump: null, score: null, game_over: null }, music: { menu: null, game: null } });
+    expect(res).toEqual({ sprite: null, sheet: null, sounds: { jump: null, score: null, game_over: null }, music: { menu: null, sky: null, forest: null, castle: null, space: null },
+      ambient: { wind: null },
+    });
   });
 
   it('resolves null when factories throw', async () => {

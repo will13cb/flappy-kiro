@@ -15,13 +15,13 @@ describe('audio MCP server', () => {
     expect(init.result.serverInfo.name).toBe('flappy-kiro-audio');
 
     const presets = await s.call('list_presets', {});
-    expect(presets.data.map((p) => p.preset)).toEqual(['flap', 'score', 'hit', 'music_menu', 'music_game']);
+    expect(presets.data.map((p) => p.preset)).toEqual(['flap', 'score', 'hit', 'game_over', 'wind', 'music_menu', 'music_sky', 'music_forest', 'music_castle', 'music_space']);
 
     const flap = await s.call('generate_sound', { preset: 'flap' });
     expect(flap.data).toMatchObject({ file: path.join(DIR, 'flap.wav'), durationS: 0.12, sampleRate: 44100 });
     expect(fs.readFileSync(path.join(ROOT, flap.data.file)).toString('ascii', 0, 4)).toBe('RIFF');
 
-    const variant = await s.call('generate_sound', { preset: 'music_game', seed: 42, file: 'game-42.wav' });
+    const variant = await s.call('generate_sound', { preset: 'music_castle', seed: 42, file: 'game-42.wav' });
     expect(variant.data).toMatchObject({ seed: 42, file: path.join(DIR, 'game-42.wav') });
 
     for (const file of ['../escape.wav', 'a/b.wav', 'UPPER.wav', 'x.mp3']) {

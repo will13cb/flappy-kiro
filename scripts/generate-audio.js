@@ -1,13 +1,14 @@
-// Writes the generated game audio: assets/score.wav, assets/music-menu.wav, assets/music-game.wav.
-// jump.wav and game_over.wav are provided recordings and are never touched.
+// Writes the generated game audio: the score chime, the game over sound, the forest wind loop and one theme per
+// screen (menu, sky, forest, castle, space) into assets/.
+// jump.wav is a provided recording and is never touched.
 // Run with: npm run generate-audio
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PRESETS, renderPresetWav } from '../mcp/audio/synth.js';
+import { PRESETS, SHIPPED_PRESETS, renderPresetWav } from '../mcp/audio/synth.js';
 
 const ASSETS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'assets');
-for (const name of ['score', 'music_menu', 'music_game']) {
+for (const name of SHIPPED_PRESETS) {
   const out = path.join(ASSETS, PRESETS[name].file);
   const bytes = renderPresetWav(name);
   fs.writeFileSync(out, bytes);

@@ -51,7 +51,7 @@ Sound design for Flappy Kiro. Three sounds are specified. All are short one-shot
 | File | Exists | Current duration | Target duration |
 |---|---|---|---|
 | `assets/jump.wav` | yes | about 0.37 s | 0.1 s |
-| `assets/game_over.wav` | yes | about 2.25 s | 0.3 s |
+| `assets/game_over.wav` | yes (generated, soft thud and two falling notes) | 0.9 s | 0.3 s |
 | `assets/score.wav` | no | n/a | 0.2 s |
 
 The existing files are longer than the targets. They can be trimmed, replaced, or kept if you prefer their sound. The score sound is new. Adding it also means adding a score event hook in the game and a third audio element in `index.html`.

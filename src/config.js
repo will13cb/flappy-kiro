@@ -39,7 +39,9 @@ const BASE = {
     BUTTON_WIDTH: 200, BUTTON_HEIGHT: 44, BUTTON_GAP: 16,
     MENU_BUTTON_Y: 400, PANEL_BUTTON_Y: 400, GAME_OVER_BUTTON_Y: 400,
     ICON_SIZE: 32, ICON_MARGIN: 16,
-    SKIN_ARROW_Y: 214, SKIN_ARROW_OFFSET: 110, // skin selector arrows, from the centre line
+    // Skin and trail rows on the main menu: row tops, row height and the arrow distance from the centre line.
+    SKIN_ROW_Y: 176, TRAIL_ROW_Y: 240, ROW_HEIGHT: 56, ROW_ARROW_OFFSET: 168,
+    MODE_ARROW_GAP: 28, // play-mode arrows sit this far outside the PLAY button
   },
   animation: {
     IDLE_FRAMES: [{ ms: 300, offsetY: 0 }, { ms: 300, offsetY: -1 }],
