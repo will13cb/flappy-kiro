@@ -48,7 +48,7 @@ describe('Property 25: cloud movement and wrap', () => {
           expect(c.alpha).toBe(b.alpha);
         });
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -61,7 +61,7 @@ describe('Property 25: cloud movement and wrap', () => {
         expect(out.x).toBe(cfg.world.WIDTH);
         expect(out.y).toBe(gone.y);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

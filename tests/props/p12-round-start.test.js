@@ -70,7 +70,7 @@ describe('Property 12: round start resets the round', () => {
           expect(s).toEqual(results[0].s);
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

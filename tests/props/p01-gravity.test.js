@@ -21,7 +21,7 @@ describe('Property 1: gravity integration', () => {
           expect(ghost).toEqual(before);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

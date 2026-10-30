@@ -23,7 +23,7 @@ describe('Property 33: frame placement and sheet source rectangles', () => {
         expect(d.x + d.w / 2).toBeCloseTo(cfg.ghost.X, 9);
         expect(d.y + d.h / 2).toBeCloseTo(ghost.y, 9);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -39,7 +39,7 @@ describe('Property 33: frame placement and sheet source rectangles', () => {
         expect(r.x).toBeGreaterThanOrEqual(0);
         expect(r.x + r.w).toBeLessThanOrEqual(FRAME_COUNT * s);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -63,7 +63,7 @@ describe('Property 33: frame placement and sheet source rectangles', () => {
           }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

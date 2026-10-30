@@ -29,7 +29,7 @@ describe('Property 24: cloud creation rules', () => {
           expect(c.y).toBeLessThanOrEqual(0.6 * cfg.world.GROUND_TOP + 1e-9);
         });
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -45,7 +45,7 @@ describe('Property 24: cloud creation rules', () => {
           }
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

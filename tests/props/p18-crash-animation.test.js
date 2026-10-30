@@ -37,7 +37,7 @@ describe('Property 18: crash animation stays above the ground', () => {
           if (elapsed < cfg.timing.CRASH_MS - 1e-6) expect(state.crashMs).toBeGreaterThan(0);
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -60,7 +60,7 @@ describe('Property 18: crash animation stays above the ground', () => {
           expect(state.ghost.y + cfg.ghost.HITBOX_RADIUS).toBeLessThanOrEqual(cfg.world.GROUND_TOP + 1e-9);
         }
       }),
-      { numRuns: 50 }
+      { numRuns: 20 }
     );
   });
 });

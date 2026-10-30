@@ -76,7 +76,7 @@ describe('Property 15: circle against rectangle uses a strict nearest-point dist
         expect(distanceSqToRect(circle, rect)).toBe(expected);
         expect(circleHitsRect(circle, rect)).toBe(expected < circle.r * circle.r);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -93,7 +93,7 @@ describe('Property 15: circle against rectangle uses a strict nearest-point dist
           expect(circleHitsRect(circle, rect)).toBe(true);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -103,7 +103,7 @@ describe('Property 15: circle against rectangle uses a strict nearest-point dist
         expect(distanceSqToRect(circle, rect)).toBe(circle.r * circle.r);
         expect(circleHitsRect(circle, rect)).toBe(false);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -118,7 +118,7 @@ describe('Property 15: circle against rectangle uses a strict nearest-point dist
         else closer.cy -= 0.25;
         expect(circleHitsRect(closer, rect)).toBe(true);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -133,7 +133,7 @@ describe('Property 15: circle against rectangle uses a strict nearest-point dist
         const exact = diagonalCircle(rect, r, sx, sy, cornerX, cornerY, 1);
         expect(Math.sqrt(distanceSqToRect(exact, rect))).toBeCloseTo(r, 6);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

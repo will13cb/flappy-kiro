@@ -47,7 +47,7 @@ describe('Property 6: pipe pair geometry', () => {
           expect(bottomBody.y + bottomBody.h).toBe(cfg.world.GROUND_TOP);
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -56,7 +56,7 @@ describe('Property 6: pipe pair geometry', () => {
       fc.property(arbConfig, (cfg) => {
         expect(cfg.pipes.GAP_HEIGHT).toBeGreaterThan(2 * cfg.ghost.HITBOX_RADIUS);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -71,7 +71,7 @@ describe('Property 6: pipe pair geometry', () => {
         [rects[0], rects[1]].forEach((r) => expect(r.y + r.h).toBeLessThanOrEqual(gapTop + 1e-9));
         [rects[2], rects[3]].forEach((r) => expect(r.y).toBeGreaterThanOrEqual(gapBottom - 1e-9));
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

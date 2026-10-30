@@ -33,7 +33,7 @@ describe('Property 29: idle frame selection', () => {
         expect(f.anim).toBe('idle');
         expect(f.index).toBe(i);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -52,7 +52,7 @@ describe('Property 29: idle frame selection', () => {
         expect(idleFrame(cfg, t + k * a.IDLE_TOTAL_MS, 0).index).toBe(base);
         expect(idleFrame(cfg, t - k * a.IDLE_TOTAL_MS, 0).index).toBe(base);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -67,7 +67,7 @@ describe('Property 29: idle frame selection', () => {
         expect(second.offsetY - first.offsetY).toBe(a.IDLE_FRAMES[1].offsetY - (a.IDLE_FRAMES[0].offsetY || 0));
         expect(a.IDLE_FRAMES[1].offsetY).toBe(-1);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

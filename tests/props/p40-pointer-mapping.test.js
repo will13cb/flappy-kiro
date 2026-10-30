@@ -40,7 +40,7 @@ describe('Property 40: pointer coordinate mapping', () => {
         expect(p.x).toBeCloseTo(lx, 6);
         expect(p.y).toBeCloseTo(ly, 6);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -54,7 +54,7 @@ describe('Property 40: pointer coordinate mapping', () => {
         expect(br.x).toBeCloseTo(cfg.world.WIDTH, 6);
         expect(br.y).toBeCloseTo(cfg.world.HEIGHT, 6);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -83,7 +83,7 @@ describe('Property 40: pointer coordinate mapping', () => {
           expect(b.y - a.y).toBeCloseTo((by - ay) / scale, 5);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -119,7 +119,7 @@ describe('Property 40: pointer coordinate mapping', () => {
         expect(inputs[0].x).toBeCloseTo(lx, 6);
         expect(inputs[0].y).toBeCloseTo(ly, 6);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

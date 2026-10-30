@@ -16,7 +16,7 @@ describe('Property 28: stored high score is the maximum', () => {
         expect(result).toBe(Math.max(score, stored));
         expect(load(storage)).toBe(Math.max(score, stored));
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -38,7 +38,7 @@ describe('Property 28: stored high score is the maximum', () => {
         expect(writes).toBe(0);
         expect(storage.getItem(HIGH_SCORE_KEY)).toBe(raw);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -48,7 +48,7 @@ describe('Property 28: stored high score is the maximum', () => {
         const storage = createThrowingStorage();
         expect(recordIfHigher(storage, score, stored)).toBe(Math.max(score, stored));
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

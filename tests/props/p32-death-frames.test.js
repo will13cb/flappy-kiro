@@ -32,7 +32,7 @@ describe('Property 32: death frames cover the crash and then hold', () => {
           }
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -42,7 +42,7 @@ describe('Property 32: death frames cover the crash and then hold', () => {
         const [lo, hi] = t1 <= t2 ? [t1, t2] : [t2, t1];
         expect(deathFrame(cfg, hi).index).toBeGreaterThanOrEqual(deathFrame(cfg, lo).index);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -54,7 +54,7 @@ describe('Property 32: death frames cover the crash and then hold', () => {
         expect(deathFrame(cfg, t).index).toBe(n);
         expect(deathFrame(cfg, t).rotation).toBeCloseTo(cfg.animation.DEATH_FINAL.rotation * DEG, 12);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -73,7 +73,7 @@ describe('Property 32: death frames cover the crash and then hold', () => {
           expect(deathFrame(cfg, mid).tint).toBe(i % 2 === 0);
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

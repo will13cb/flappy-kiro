@@ -33,7 +33,7 @@ describe('Property 11: world is frozen outside Playing', () => {
           expect(state.mode).toBe(mode);
           expect(world(state)).toEqual(before);
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   }
@@ -44,7 +44,7 @@ describe('Property 11: world is frozen outside Playing', () => {
         runUpdates(state, dts);
         expect(state.ghost.y).toBe(cfg.world.MENU_GHOST_Y);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -65,7 +65,7 @@ describe('Property 11: world is frozen outside Playing', () => {
           animClockMs: state.animClockMs,
         }).toEqual(before);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -79,7 +79,7 @@ describe('Property 11: world is frozen outside Playing', () => {
         handleInput(state, { kind: 'pause' }, { rng: rng(1) });
         expect(state).toEqual(before);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

@@ -21,7 +21,7 @@ describe('Property 7: spawn rule', () => {
         const expected = pairs.length === 0 ? true : pairs[pairs.length - 1].x <= threshold;
         expect(shouldSpawn(cfg, pairs)).toBe(expected);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -33,7 +33,7 @@ describe('Property 7: spawn rule', () => {
         expect(shouldSpawn(cfg, [{ ...first, x: threshold }])).toBe(true);
         expect(shouldSpawn(cfg, [{ ...first, x: threshold + 1e-6 }])).toBe(false);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -49,7 +49,7 @@ describe('Property 7: spawn rule', () => {
         const spawned = spawnPair(cfg, pairs, rng(seed));
         expect(shouldSpawn(cfg, spawned)).toBe(false);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

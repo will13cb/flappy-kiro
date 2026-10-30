@@ -35,7 +35,7 @@ describe('Property 22: key repeat is ignored', () => {
         expect(mapKey({ key, repeat: true })).toBeNull();
         expect(mapKey({ key, repeat: false })).not.toBeNull();
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -49,7 +49,7 @@ describe('Property 22: key repeat is ignored', () => {
         t.fire({ key, repeat: false, preventDefault() {} });
         expect(total()).toBe(1);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

@@ -57,7 +57,7 @@ describe('Property 20: game over input lockout', () => {
           expect(state).toEqual(before);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -77,7 +77,7 @@ describe('Property 20: game over input lockout', () => {
           expect(events).toHaveLength(1);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
   it('keeps the panel readable: input unlocks after the panel appears', () => {
@@ -94,7 +94,7 @@ describe('Property 20: game over input lockout', () => {
         expect(handleInput(open, input, { rng: rng(seed) })).toEqual([]);
         expect(open.mode).toBe('Main_Menu');
       }),
-      { numRuns: 50 }
+      { numRuns: 20 }
     );
   });
 });

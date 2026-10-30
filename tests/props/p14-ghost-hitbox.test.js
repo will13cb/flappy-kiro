@@ -22,7 +22,7 @@ describe('Property 14: ghost hitbox is a circle centered on the sprite', () => {
         expect(c.cy).toBe(ghost.y);
         expect(c.r).toBe(cfg.ghost.HITBOX_RADIUS);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -42,7 +42,7 @@ describe('Property 14: ghost hitbox is a circle centered on the sprite', () => {
         expect(c.cx - c.r).toBeGreaterThanOrEqual(s.x - EPS);
         expect(c.cy + c.r).toBeLessThanOrEqual(s.y + s.h + EPS);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

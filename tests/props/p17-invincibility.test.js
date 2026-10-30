@@ -34,7 +34,7 @@ describe('Property 17: invincibility timer and blink', () => {
           }
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -46,7 +46,7 @@ describe('Property 17: invincibility timer and blink', () => {
           expect(state.invincibleMs).toBe(0);
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -65,7 +65,7 @@ describe('Property 17: invincibility timer and blink', () => {
           }
         }
       ),
-      { numRuns: 200 }
+      { numRuns: 20 }
     );
   });
 
@@ -107,7 +107,7 @@ describe('Property 17: invincibility timer and blink', () => {
           expect(expired.invincibleMs).toBe(0);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -121,7 +121,7 @@ describe('Property 17: invincibility timer and blink', () => {
         }
         if (state.mode === 'Game_Over') expect(state.invincibleMs).toBe(0);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

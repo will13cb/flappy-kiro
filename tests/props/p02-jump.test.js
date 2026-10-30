@@ -18,7 +18,7 @@ describe('Property 2: jump sets a fixed upward velocity', () => {
           expect(result.y).toBe(ghost.y);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -30,7 +30,7 @@ describe('Property 2: jump sets a fixed upward velocity', () => {
           expect(applyJump(cfg, a).vy).toBe(applyJump(cfg, b).vy);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

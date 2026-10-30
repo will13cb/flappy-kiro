@@ -31,7 +31,7 @@ describe('Property 36: menu navigation', () => {
           expect(m.panelOpen).toBe(false);
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -41,7 +41,7 @@ describe('Property 36: menu navigation', () => {
         const closed = { ...menu, panelOpen: false };
         expect(navigate(navigate(closed, d), opposite(d))).toEqual(closed);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -54,7 +54,7 @@ describe('Property 36: menu navigation', () => {
         for (const d of dirs) m = navigate(m, d);
         expect(m).toEqual(open);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

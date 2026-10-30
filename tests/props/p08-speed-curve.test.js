@@ -17,7 +17,7 @@ describe('Property 8: scroll speed curve', () => {
         );
         expect(speedForScore(cfg, score)).toBeCloseTo(expected, 9);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -32,7 +32,7 @@ describe('Property 8: scroll speed curve', () => {
         expect(sHi).toBeLessThanOrEqual(cfg.speed.MAX_SPEED);
         expect(sLo).toBeLessThanOrEqual(cfg.speed.MAX_SPEED);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

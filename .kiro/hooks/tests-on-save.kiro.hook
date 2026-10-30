@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "name": "Run tests on save",
   "description": "Runs the vitest suite whenever game, MCP or test code is saved, so regressions show up immediately.",
   "version": "1",

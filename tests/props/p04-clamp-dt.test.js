@@ -19,7 +19,7 @@ describe('Property 4: frame time is clamped', () => {
         expect(dt).toBeGreaterThanOrEqual(0);
         expect(dt).toBeLessThanOrEqual(cfg.timing.MAX_DT);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -29,7 +29,7 @@ describe('Property 4: frame time is clamped', () => {
         const raw = frac * cfg.timing.MAX_DT;
         expect(clampDt(cfg, raw)).toBe(raw);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

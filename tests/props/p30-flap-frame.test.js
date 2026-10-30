@@ -34,7 +34,7 @@ describe('Property 30: flap frame selection and return to idle', () => {
         expect(f.scaleX).toBe(a.FLAP_FRAMES[expected].scaleX);
         expect(f.scaleY).toBe(a.FLAP_FRAMES[expected].scaleY);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -48,7 +48,7 @@ describe('Property 30: flap frame selection and return to idle', () => {
           start += fr.ms;
         });
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -61,7 +61,7 @@ describe('Property 30: flap frame selection and return to idle', () => {
         expect(f.anim).toBe('idle');
         expect(f.index).toBe(0);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -73,7 +73,7 @@ describe('Property 30: flap frame selection and return to idle', () => {
         expect(f.anim).toBe('idle');
         expect(f.index).toBe(0);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

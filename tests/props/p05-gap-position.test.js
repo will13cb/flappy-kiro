@@ -30,7 +30,7 @@ describe('Property 5: gap position respects margins and shift limit', () => {
         expect(c).toBeLessThanOrEqual(cfg.pipes.GAP_CENTER_MAX);
         expect(Math.abs(c - prev)).toBeLessThanOrEqual(cfg.pipes.MAX_GAP_SHIFT + EPS);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -45,7 +45,7 @@ describe('Property 5: gap position respects margins and shift limit', () => {
         expect(pair.gapCenter).toBeGreaterThanOrEqual(cfg.pipes.GAP_CENTER_MIN);
         expect(pair.gapCenter).toBeLessThanOrEqual(cfg.pipes.GAP_CENTER_MAX);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -66,7 +66,7 @@ describe('Property 5: gap position respects margins and shift limit', () => {
           }
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

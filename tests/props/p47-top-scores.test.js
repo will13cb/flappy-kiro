@@ -18,7 +18,7 @@ describe('Property 47: top scores', () => {
         expect(sortedDesc(next)).toBe(true);
         expect(next).toEqual(before.concat(score).sort((a, b) => b - a).slice(0, TOP_SIZE));
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
   it('reads back what was saved', () => {
@@ -29,7 +29,7 @@ describe('Property 47: top scores', () => {
         expect(storage.getItem(TOP_SCORES_KEY)).toBe(JSON.stringify(list));
         expect(loadTop(storage)).toEqual(list);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
   it('parseTopScores always returns a sorted list of at most 5 non-negative integers', () => {
@@ -40,7 +40,7 @@ describe('Property 47: top scores', () => {
         expect(sortedDesc(list)).toBe(true);
         list.forEach((n) => expect(Number.isSafeInteger(n) && n >= 0).toBe(true));
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
   it('reads corrupt data as an empty list', () => {

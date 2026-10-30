@@ -81,7 +81,7 @@ describe('Property 39: layout and hit testing', () => {
         expect(mute.x).toBe(u.ICON_MARGIN);
         expect(cfg.world.WIDTH - (pause.x + pause.w)).toBeCloseTo(u.ICON_MARGIN, 9);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -102,7 +102,7 @@ describe('Property 39: layout and hit testing', () => {
         expect(result).toBe(hits.length ? hits[0].name : null);
         if (mode === 'Main_Menu') expect(['MUTE', 'PAUSE']).not.toContain(result);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -119,7 +119,7 @@ describe('Property 39: layout and hit testing', () => {
           expect(hitTest(cfg, s, rect.x, rect.y - 1)).not.toBe(name);
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

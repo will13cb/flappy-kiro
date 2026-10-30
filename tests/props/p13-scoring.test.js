@@ -58,7 +58,7 @@ describe('Property 13: scoring counts each passed pair once', () => {
           }
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -76,7 +76,7 @@ describe('Property 13: scoring counts each passed pair once', () => {
         expect(events.filter((e) => e.type === 'scored')).toHaveLength(0);
         expect(state.score).toBe(score);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

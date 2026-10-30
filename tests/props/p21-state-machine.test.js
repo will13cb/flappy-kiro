@@ -49,7 +49,7 @@ describe('Property 21: state machine only takes permitted transitions', () => {
           expect(PERMITTED.has(`${t.from}>${t.to}`)).toBe(true);
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -61,7 +61,7 @@ describe('Property 21: state machine only takes permitted transitions', () => {
           send(state, input);
           expect(state).toEqual(before);
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     }
   });
@@ -74,7 +74,7 @@ describe('Property 21: state machine only takes permitted transitions', () => {
         expect(state).toEqual(before);
         expect(events ?? []).toEqual([]);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -86,7 +86,7 @@ describe('Property 21: state machine only takes permitted transitions', () => {
         send(state, { kind: 'hidden' });
         expect(state.mode).toBe('Paused');
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 

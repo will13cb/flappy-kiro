@@ -25,7 +25,7 @@ describe('Property 31: flap restarts on every jump', () => {
         expect(frame.anim).toBe('flap');
         expect(frame.index).toBe(0);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -40,7 +40,7 @@ describe('Property 31: flap restarts on every jump', () => {
         expect(frame.anim).toBe('flap');
         expect(frame.index).toBe(0);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

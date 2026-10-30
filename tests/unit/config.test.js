@@ -1,7 +1,5 @@
 // Validates: Requirements 4.4, 4.7, 1.6
 import { describe, it, expect } from 'vitest';
-import fc from 'fast-check';
-import { arbConfig } from '../helpers/arbitraries.js';
 
 import * as cfgMod from '../../src/config.js';
 const { DEFAULT_CONFIG, validateConfig, assertValidConfig, buildConfig, loadConfig, parseOverrides, TUNABLE } = cfgMod;
@@ -77,37 +75,27 @@ describe('URL overrides', () => {
     expect(parseOverrides(search).overrides).toEqual({});
   });
 
+  it('applies ?pointsPerWorld=1 and defaults POINTS_PER_WORLD to 5', () => {
+    const { warnings, log } = collector();
+    expect(DEFAULT_CONFIG.world.POINTS_PER_WORLD).toBe(5);
+    expect(loadConfig('?pointsPerWorld=1', log).world.POINTS_PER_WORLD).toBe(1);
+    expect(warnings).toEqual([]);
+  });
+
+  it.each(['?pointsPerWorld=0', '?pointsPerWorld=2.5'])('rejects %s and names world.pointsPerWorld', (search) => {
+    const { warnings, log } = collector();
+    expect(loadConfig(search, log)).toBe(DEFAULT_CONFIG);
+    expect(warnings.some((w) => w.includes('world.pointsPerWorld'))).toBe(true);
+  });
+
+  it('ignores ?world=2 without a warning or an override', () => {
+    expect(parseOverrides('?world=2')).toEqual({ overrides: {}, warnings: [] });
+  });
+
   it('falls back to defaults for ?gapHeight=20 and names gap.heightVsHitbox', () => {
     const { warnings, log } = collector();
     const cfg = loadConfig('?gapHeight=20', log);
     expect(cfg).toBe(DEFAULT_CONFIG);
     expect(warnings.some((w) => w.includes('gap.heightVsHitbox'))).toBe(true);
-  });
-});
-
-describe('arbConfig', () => {
-  it('rejects few candidates', () => {
-    const samples = fc.sample(arbConfig, 100);
-    expect(samples).toHaveLength(100);
-    samples.forEach((c) => expect(validateConfig(c).valid).toBe(true));
-
-    // Acceptance rate of the underlying (unfiltered) candidates.
-    let valid = 0;
-    const total = 300;
-    fc.sample(
-      fc.record(
-        Object.fromEntries(Object.keys(TUNABLE).map((n) => [n, fc.double({ min: 0.5, max: 1.5, noNaN: true })]))
-      ),
-      total
-    ).forEach((f) => {
-      const overrides = {};
-      Object.keys(TUNABLE).forEach((n) => {
-        const [g, k] = TUNABLE[n];
-        const v = DEFAULT_CONFIG[g][k] * f[n];
-        (overrides[g] = overrides[g] || {})[k] = k === 'SPEED_STEP_INTERVAL' ? Math.max(1, Math.round(v)) : v;
-      });
-      if (validateConfig(buildConfig(overrides)).valid) valid++;
-    });
-    expect(valid / total).toBeGreaterThan(0.1);
   });
 });

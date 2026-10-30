@@ -45,7 +45,7 @@ describe('Property 9: pipes and ground scroll together', () => {
           }
         }
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

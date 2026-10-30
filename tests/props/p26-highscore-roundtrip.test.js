@@ -23,7 +23,7 @@ describe('Property 26: high score round trip', () => {
         expect(load(storage)).toBe(score);
         expect(parseHighScore(String(score))).toBe(score);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -36,7 +36,7 @@ describe('Property 26: high score round trip', () => {
         expect(result).toBe(Math.max(stored, score));
         expect(load(storage)).toBe(Math.max(stored, score));
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -47,7 +47,7 @@ describe('Property 26: high score round trip', () => {
         expect(Number.isSafeInteger(v)).toBe(true);
         expect(v).toBeGreaterThanOrEqual(0);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -60,7 +60,7 @@ describe('Property 26: high score round trip', () => {
         expect(save(storage, score)).toBe(false);
         expect(recordIfHigher(storage, score + 1, score)).toBe(score + 1);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

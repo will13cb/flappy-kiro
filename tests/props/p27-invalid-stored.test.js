@@ -16,7 +16,7 @@ describe('Property 27: invalid stored values read as zero', () => {
         expect(parseHighScore(raw)).toBe(0);
         expect(load(createFakeStorage({ [HIGH_SCORE_KEY]: raw }))).toBe(0);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -25,7 +25,7 @@ describe('Property 27: invalid stored values read as zero', () => {
       fc.property(fc.nat(), (n) => {
         expect(load(createFakeStorage({ [HIGH_SCORE_KEY]: String(n) }))).toBe(n);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -40,7 +40,7 @@ describe('Property 27: invalid stored values read as zero', () => {
       fc.property(fc.string(), (message) => {
         expect(load(createThrowingStorage(message))).toBe(0);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

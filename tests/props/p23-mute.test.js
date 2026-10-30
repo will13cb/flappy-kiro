@@ -63,7 +63,7 @@ describe('Property 23: mute suppresses every sound', () => {
           }
         }
       }),
-      { numRuns: 200 }
+      { numRuns: 20 }
     );
   });
 

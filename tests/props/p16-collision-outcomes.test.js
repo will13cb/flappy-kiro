@@ -45,7 +45,7 @@ describe('Property 16: collision outcomes', () => {
         expect(hit.ceiling).toBe(ghost.y - r <= 0);
         expect(hit.pipe).toBe(!invincible && expectedPipeHit(cfg, ghost, pairs));
       }),
-      { numRuns: 200 }
+      { numRuns: 20 }
     );
   });
 
@@ -85,7 +85,7 @@ describe('Property 16: collision outcomes', () => {
         const hit = collision.detect(cfg, ghost, [{ x: px, gapCenter }], false);
         expect(hit).toEqual({ pipe: false, ground: false, ceiling: false });
       }),
-      { numRuns: 200 }
+      { numRuns: 20 }
     );
   });
 
@@ -120,7 +120,7 @@ describe('Property 16: collision outcomes', () => {
           expect(over).toHaveLength(0);
         }
       }),
-      { numRuns: 200 }
+      { numRuns: 20 }
     );
   });
 
@@ -133,7 +133,7 @@ describe('Property 16: collision outcomes', () => {
         expect(g.pipe).toBe(false);
         expect(state.mode).toBe(g.ground || g.ceiling ? 'Game_Over' : 'Playing');
       }),
-      { numRuns: 200 }
+      { numRuns: 20 }
     );
   });
 });

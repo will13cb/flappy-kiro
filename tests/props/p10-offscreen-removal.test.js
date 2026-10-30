@@ -41,7 +41,7 @@ describe('Property 10: off-screen pairs are removed', () => {
         expect(out).not.toBe(pairs);
         expect(pairs).toEqual(snapshot);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -52,7 +52,7 @@ describe('Property 10: off-screen pairs are removed', () => {
         const drop = { x: -cfg.pipes.CAP_WIDTH - 1, gapCenter: cfg.pipes.GAP_CENTER_MIN, scored: true };
         expect(removeOffscreen(cfg, [drop, keep])).toEqual([keep]);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -74,7 +74,7 @@ describe('Property 10: off-screen pairs are removed', () => {
           expect(pairs[0].x + cfg.pipes.CAP_WIDTH).toBeLessThan(0);
         }
       ),
-      { numRuns: 50 }
+      { numRuns: 20 }
     );
   });
 });

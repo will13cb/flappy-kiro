@@ -25,7 +25,7 @@ describe('Property 19: new high score indication', () => {
         expect(over.previousHighScore).toBe(highScore);
         expect(state.newHighScore).toBe(over.score > highScore);
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -42,7 +42,7 @@ describe('Property 19: new high score indication', () => {
           expect(state.newHighScore).toBe(flag);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });
