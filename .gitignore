@@ -59,3 +59,4 @@ build/
 # Local MCP data (leaderboard)
 data/
 tests/.tmp-*
+assets/generated/

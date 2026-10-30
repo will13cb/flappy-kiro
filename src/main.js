@@ -8,7 +8,7 @@ import { loadConfig } from './config.js';
 import { clampDt } from './physics.js';
 import { createGame, handleInput, update } from './game.js';
 import { load as loadHighScore, recordIfHigher } from './scoreStore.js';
-import { createAudioPlayer, soundsFor } from './audio.js';
+import { createAudioPlayer, soundsFor, musicFor } from './audio.js';
 import { loadAssets } from './assets.js';
 import { attachInput } from './input.js';
 import { render, fitCanvas } from './renderer.js';
@@ -58,7 +58,8 @@ export function startApp(opts) {
 
   const assets = { sprite: null, sheet: null };
   const soundEls = { jump: null, score: null, game_over: null };
-  const audio = createAudioPlayer(soundEls); // keeps the soundEls reference, filled once loaded
+  const musicEls = { menu: null, game: null };
+  const audio = createAudioPlayer(soundEls, musicEls); // keeps both references, filled once loaded
   const createCanvas = doc && doc.createElement
     ? (w, h) => {
         const c = doc.createElement('canvas');
@@ -74,6 +75,8 @@ export function startApp(opts) {
       assets.sprite = a.sprite;
       assets.sheet = a.sheet;
       Object.assign(soundEls, a.sounds);
+      Object.assign(musicEls, a.music);
+      audio.resumeMusic(); // start the current track now that it exists
       return assets;
     })
     .catch(() => assets);
@@ -85,6 +88,7 @@ export function startApp(opts) {
 
   function pushInput(input) {
     queue.push(input);
+    audio.resumeMusic(); // runs inside the input event, so it unlocks music blocked by autoplay rules
   }
 
   function toggleMute() {
@@ -114,6 +118,8 @@ export function startApp(opts) {
       processEvents(handleInput(state, queue.shift(), { rng }));
     }
     processEvents(update(state, dt, { rng }));
+    const music = musicFor(state.mode);
+    audio.setMusic(music.track, music.paused);
 
     if (ctx) render(ctx, state, assets, { muted: audio.isMuted(), createCanvas });
   }

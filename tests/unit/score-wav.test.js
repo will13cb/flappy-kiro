@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { buildScoreWav, SAMPLE_RATE, DURATION_S } from '../../scripts/generate-score-wav.js';
+import { buildScoreWav, SCORE_SAMPLE_RATE as SAMPLE_RATE, SCORE_DURATION_S as DURATION_S } from '../../mcp/audio/synth.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ASSETS = path.join(ROOT, 'assets');

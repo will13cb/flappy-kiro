@@ -19,6 +19,7 @@ Plain JavaScript ES modules on an HTML canvas, with no build step and no runtime
 - [Rendering](#rendering)
 - [Assets and fallbacks](#assets-and-fallbacks)
 - [Testing](#testing)
+- [MCP servers](#mcp-servers)
 - [Contributing](#contributing)
 
 ## Quick start
@@ -53,6 +54,7 @@ npm test
 - After a crash, input is ignored for 0.5 s so you don't restart by accident.
 - Switching tabs pauses the game.
 - Your best score is kept in `localStorage`.
+- Calm music plays on the menu and faster music during a round. It pauses with the game and stops at game over. Mute (M) silences music too.
 
 ## Project layout
 
@@ -73,8 +75,9 @@ src/
   assets.js           independent image and sound loading with fallbacks
   input.js            keyboard, mouse, touch and visibility wiring
   renderer.js         all canvas drawing
-assets/               ghosty.png, jump.wav, score.wav, game_over.wav
-scripts/              generate-score-wav.js (builds assets/score.wav)
+assets/               ghosty.png, jump.wav, score.wav, game_over.wav, music-menu.wav, music-game.wav
+mcp/                  local MCP servers: audio (sound generation) and leaderboard
+scripts/              generate-audio.js (builds score.wav and the music loops)
 tests/
   helpers/            shared fast-check generators and a game runner
   props/              property-based tests, one per design property (pNN-*.test.js)
@@ -336,12 +339,13 @@ Each asset loads on its own. One failure never blocks the game or the other asse
 | `assets/ghosty.png` | A 24 x 24 white square is drawn in its place |
 | `assets/ghosty-sheet.png` (optional sprite sheet) | Transforms of `ghosty.png` are used. This is expected today, since the sheet doesn't exist yet |
 | `jump.wav`, `score.wav`, `game_over.wav` | That sound is silent |
+| `music-menu.wav`, `music-game.wav` | No music; the game is otherwise unaffected |
 | `localStorage` | The high score reads as 0 and isn't saved |
 
 `assets/score.wav` is generated:
 
 ```bash
-npm run generate-score-wav
+npm run generate-audio
 ```
 
 ## Testing
@@ -362,6 +366,21 @@ npx vitest --run tests/props/p13-scoring.test.js   # one file
   - `tests/helpers/game-arbs.js` has game-state generators and `runSteps`, which drives `handleInput` and `update` and records transitions and events.
 
 The core is deterministic (seeded `rng`, explicit `dt`), so tests run the real game logic with no browser and no timers.
+
+## MCP servers
+
+Two local MCP servers in `mcp/` are registered in `.kiro/settings/mcp.json`. Both are dependency-free and share the stdio transport in `mcp/lib/stdio-server.js`. They are tools for Kiro and other MCP clients; the browser game does not call them.
+
+| Server | Tools | Data |
+|---|---|---|
+| `flappy-audio` (`mcp/audio/server.js`) | `list_presets`, `generate_sound` (`flap`, `score`, `hit`, `music_menu`, `music_game`, optional `seed` and `file`) | Writes WAVs to `assets/generated/` (gitignored), or `AUDIO_OUT_DIR` inside the project |
+| `flappy-leaderboard` (`mcp/leaderboard/server.js`) | `submit_score`, `get_leaderboard`, `get_player`, `list_achievements` | `data/leaderboard.json` (gitignored), or `LEADERBOARD_FILE` |
+
+The audio presets are synthesised in `mcp/audio/synth.js`. The same code builds the game's generated sounds:
+
+```bash
+npm run generate-audio   # writes assets/score.wav, assets/music-menu.wav, assets/music-game.wav
+```
 
 ## Contributing
 

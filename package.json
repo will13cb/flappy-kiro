@@ -6,7 +6,7 @@
   "description": "Flappy Kiro: a browser game. Dev dependencies only; the game itself has no dependencies.",
   "scripts": {
     "test": "vitest --run",
-    "generate-score-wav": "node scripts/generate-score-wav.js"
+    "generate-audio": "node scripts/generate-audio.js"
   },
   "devDependencies": {
     "fast-check": "3.23.2",

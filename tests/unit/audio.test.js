@@ -1,7 +1,7 @@
 // Validates: Requirements 11.3, 11.4, 19.5, 19.6
 import { describe, it, expect } from 'vitest';
 
-import { createAudioPlayer, soundsFor, SOUND_NAMES } from '../../src/audio.js';
+import { createAudioPlayer, soundsFor, musicFor, SOUND_NAMES, MUSIC_VOLUME } from '../../src/audio.js';
 
 function fakeEl(opts = {}) {
   const el = {
@@ -100,5 +100,82 @@ describe('soundsFor', () => {
     expect(SOUND_NAMES).toEqual(['jump', 'score', 'game_over']);
     const out = soundsFor([{ type: 'jump' }, { type: 'scored' }, { type: 'gameOver' }]);
     out.forEach((n) => expect(SOUND_NAMES).toContain(n));
+  });
+});
+
+describe('music', () => {
+  function track() {
+    const el = {
+      paused: true, loop: false, volume: 1, currentTime: 0, plays: 0, pauses: 0,
+      play() { el.plays += 1; el.paused = false; return Promise.resolve(); },
+      pause() { el.pauses += 1; el.paused = true; },
+    };
+    return el;
+  }
+
+  it('maps modes to tracks', () => {
+    expect(musicFor('Main_Menu')).toEqual({ track: 'menu', paused: false });
+    expect(musicFor('Playing')).toEqual({ track: 'game', paused: false });
+    expect(musicFor('Paused')).toEqual({ track: 'game', paused: true });
+    expect(musicFor('Game_Over')).toEqual({ track: null, paused: false });
+  });
+
+  it('loops the wanted track, switches from the start, and is a no-op when unchanged', () => {
+    const menu = track();
+    const game = track();
+    const p = createAudioPlayer({}, { menu, game });
+    p.setMusic('menu', false);
+    p.setMusic('menu', false);
+    expect(menu).toMatchObject({ plays: 1, loop: true, volume: MUSIC_VOLUME });
+    menu.currentTime = 5;
+    p.setMusic('game', false);
+    expect(menu).toMatchObject({ paused: true, currentTime: 0 });
+    expect(game.plays).toBe(1);
+  });
+
+  it('pausing keeps the position; null stops the track', () => {
+    const game = track();
+    const p = createAudioPlayer({}, { game });
+    p.setMusic('game', false);
+    game.currentTime = 3;
+    p.setMusic('game', true);
+    expect(game).toMatchObject({ paused: true, currentTime: 3 });
+    p.setMusic('game', false);
+    expect(game.plays).toBe(2);
+    p.setMusic(null, false);
+    expect(game).toMatchObject({ paused: true, currentTime: 0 });
+  });
+
+  it('mute pauses music and unmute resumes it', () => {
+    const menu = track();
+    const p = createAudioPlayer({}, { menu });
+    p.setMusic('menu', false);
+    p.toggleMute();
+    expect(menu.paused).toBe(true);
+    p.setMusic('menu', false);
+    p.resumeMusic();
+    expect(menu.plays).toBe(1);
+    p.toggleMute();
+    expect(menu.plays).toBe(2);
+  });
+
+  it('resumeMusic retries a track that loaded late or was blocked by autoplay', () => {
+    const music = { menu: null };
+    const p = createAudioPlayer({}, music);
+    p.setMusic('menu', false);
+    const menu = track();
+    music.menu = menu;
+    p.resumeMusic();
+    expect(menu.plays).toBe(1);
+    menu.paused = true; // play() was blocked
+    p.resumeMusic();
+    expect(menu.plays).toBe(2);
+  });
+
+  it('missing or failing music elements never throw', () => {
+    const p = createAudioPlayer({}, { game: { play() { throw new Error('blocked'); }, pause() {} } });
+    expect(() => p.setMusic('menu', false)).not.toThrow();
+    expect(() => p.setMusic('game', false)).not.toThrow();
+    expect(() => createAudioPlayer().setMusic('game', false)).not.toThrow();
   });
 });

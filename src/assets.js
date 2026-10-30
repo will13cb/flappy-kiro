@@ -10,6 +10,10 @@ const SOUND_FILES = {
   score: 'assets/score.wav',
   game_over: 'assets/game_over.wav',
 };
+const MUSIC_FILES = {
+  menu: 'assets/music-menu.wav',
+  game: 'assets/music-game.wav',
+};
 const DEFAULT_SHEET_FILE = 'assets/ghosty-sheet.png';
 const FALLBACK_SIZE = 24;
 
@@ -56,23 +60,27 @@ function loadSound(src, createAudio) {
   });
 }
 
-// Always resolves: { sprite, sheet, sounds: { jump, score, game_over } } with null for failed assets.
+// Always resolves: { sprite, sheet, sounds: { jump, score, game_over }, music: { menu, game } }
+// with null for failed assets.
 function loadAssets(cfg, deps) {
   const d = Object.assign(defaultDeps(), deps || {});
   const sheetFile = (cfg && cfg.animation && cfg.animation.SHEET_FILE) || DEFAULT_SHEET_FILE;
   const imageOrNull = (src) => (d.createImage ? loadImage(src, d.createImage) : Promise.resolve(null));
   const soundOrNull = (src) => (d.createAudio ? loadSound(src, d.createAudio) : Promise.resolve(null));
-  const names = Object.keys(SOUND_FILES);
-
+  const loadGroup = (files) => {
+    const names = Object.keys(files);
+    return Promise.all(names.map((n) => soundOrNull(files[n]))).then((els) => {
+      const out = {};
+      names.forEach((n, i) => { out[n] = els[i]; });
+      return out;
+    });
+  };
   return Promise.all([
     imageOrNull(SPRITE_FILE),
     imageOrNull(sheetFile),
-    ...names.map((n) => soundOrNull(SOUND_FILES[n])),
-  ]).then(([sprite, sheet, ...sounds]) => {
-    const out = {};
-    names.forEach((n, i) => { out[n] = sounds[i]; });
-    return { sprite, sheet, sounds: out };
-  });
+    loadGroup(SOUND_FILES),
+    loadGroup(MUSIC_FILES),
+  ]).then(([sprite, sheet, sounds, music]) => ({ sprite, sheet, sounds, music }));
 }
 
 // Fallback sprite: white 24x24 square centered on (cx, cy).

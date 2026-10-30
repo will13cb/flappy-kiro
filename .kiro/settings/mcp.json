@@ -2,10 +2,27 @@
   "mcpServers": {
     "flappy-leaderboard": {
       "command": "node",
-      "args": ["mcp/leaderboard/server.js"],
+      "args": [
+        "mcp/leaderboard/server.js"
+      ],
       "env": {},
       "disabled": false,
-      "autoApprove": ["get_leaderboard", "get_player", "list_achievements"]
+      "autoApprove": [
+        "get_leaderboard",
+        "get_player",
+        "list_achievements"
+      ]
+    },
+    "flappy-audio": {
+      "command": "node",
+      "args": [
+        "mcp/audio/server.js"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": [
+        "list_presets"
+      ]
     }
   }
 }
