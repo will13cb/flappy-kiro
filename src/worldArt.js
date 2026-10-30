@@ -117,24 +117,52 @@ function pines(ctx, W, groundTop, drift, spacing, height, seed) {
   }
 }
 
-// A distant castle wall: battlements along the top and a tower with a lit window now and then.
-function wall(ctx, W, groundTop, drift, height, pal) {
-  const span = W + 160;
-  for (let x = 0; x < W; x += 16) {
-    const u = wrap(x + drift, span);
-    ctx.fillRect(x, groundTop - height, 16, height);
-    if (Math.floor(u / 16) % 2 === 0) ctx.fillRect(x, groundTop - height - 8, 16, 8);
+// Castle hall: a brick back wall with arched windows and wall-mounted torches, all scrolling
+// slowly. drift is the parallax offset in px.
+function hall(ctx, W, H, drift, pal, t) {
+  ctx.fillStyle = pal.far;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = pal.far2;
+  const row = 28;
+  for (let y = 0, r = 0; y < H; y += row, r++) {
+    ctx.fillRect(0, y, W, 2);
+    for (let k = 0; k * 56 < W + 112; k++) {
+      const x = Math.round(wrap(k * 56 + (r % 2) * 28 - drift, W + 112)) - 56;
+      ctx.fillRect(x, y, 2, row);
+    }
   }
   for (let i = 0; i < 4; i++) {
-    const x = Math.round(wrap(i * 160 + 50 - drift, span)) - 40;
+    const x = Math.round(wrap(i * 160 + 70 - drift * 1.3, W + 160)) - 80;
+    // Arched window: a frame, then dim night glass.
     ctx.fillStyle = pal.far2;
-    ctx.fillRect(x, groundTop - height - 52, 44, 52 + height);
-    ctx.fillRect(x - 4, groundTop - height - 60, 52, 8);
+    ctx.fillRect(x - 6, 128, 52, 118);
+    ctx.fillRect(x, 120, 40, 8);
+    ctx.fillRect(x + 8, 114, 24, 6);
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = pal.haze;
+    ctx.fillRect(x, 134, 40, 106);
+    ctx.fillRect(x + 4, 128, 32, 6);
+    ctx.fillRect(x + 10, 122, 20, 6);
+    ctx.restore();
+    ctx.fillStyle = pal.far2;
+    ctx.fillRect(x + 19, 122, 2, 118); // mullion
+    ctx.fillRect(x, 176, 40, 2);
+    // Torch on the wall between this window and the next.
+    const tx = x + 80;
+    const flick = 2 + Math.round(2 * Math.abs(Math.sin(t * 0.07 + i * 1.7)));
+    ctx.fillStyle = pal.pipeDark;
+    ctx.fillRect(tx - 3, 196, 10, 4); // bracket
+    ctx.fillRect(tx, 198, 4, 16);
     ctx.fillStyle = pal.accent;
-    ctx.globalAlpha = 0.35;
-    ctx.fillRect(x + 18, groundTop - height - 36, 8, 12);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = pal.far2;
+    ctx.fillRect(tx - 2, 188 - flick, 8, 8 + flick);
+    ctx.fillStyle = pal.accent2;
+    ctx.fillRect(tx, 190 - flick / 2, 4, 5);
+    ctx.save();
+    ctx.fillStyle = pal.accent;
+    ctx.globalAlpha = 0.08; // small halo round the flame, not a box on the wall
+    ctx.fillRect(tx - 6, 180 - flick, 16, 22 + flick);
+    ctx.restore();
   }
 }
 
@@ -144,13 +172,11 @@ function wall(ctx, W, groundTop, drift, height, pal) {
 function drawBackdrop(ctx, kind, cfg, pal, t) {
   const W = cfg.world.WIDTH;
   const H = cfg.world.GROUND_TOP;
-  // Horizon haze: three soft bands that lift the sky towards the ground.
+  // Horizon haze: many faint bands stacked towards the ground, so no single edge shows.
   ctx.save();
   ctx.fillStyle = pal.haze;
-  [[H - 220, 0.1], [H - 150, 0.14], [H - 80, 0.2]].forEach(([y, a]) => {
-    ctx.globalAlpha = a;
-    ctx.fillRect(0, y, W, H - y);
-  });
+  ctx.globalAlpha = 0.03;
+  for (let y = H - 260; y < H; y += 26) ctx.fillRect(0, y, W, H - y);
   ctx.restore();
   if (kind === 0) {
     ctx.save();
@@ -182,26 +208,7 @@ function drawBackdrop(ctx, kind, cfg, pal, t) {
       ctx.fillRect(Math.round(x), Math.round(y), 4, 3);
     }
   } else if (kind === 2) {
-    ctx.save();
-    ctx.fillStyle = pal.accent2;
-    ctx.globalAlpha = 0.14;
-    disc(ctx, 96, 104, 30);
-    ctx.globalAlpha = 0.8;
-    disc(ctx, 96, 104, 20);
-    ctx.restore();
-    ctx.fillStyle = pal.far;
-    wall(ctx, W, H, t * 0.12, 70, pal);
-    // Torches on the back wall, flickering.
-    for (let i = 0; i < 4; i++) {
-      const x = Math.round(wrap(60 + i * 120 - t * 0.2, W));
-      const flick = 2 + Math.round(2 * Math.abs(Math.sin(t * 0.07 + i * 1.7)));
-      ctx.fillStyle = pal.pipeDark;
-      ctx.fillRect(x, 140, 4, 14);
-      ctx.fillStyle = pal.accent;
-      ctx.fillRect(x - 1, 134 - flick, 6, 6 + flick);
-      ctx.fillStyle = pal.accent2;
-      ctx.fillRect(x, 136 - flick / 2, 4, 4);
-    }
+    hall(ctx, W, H, t * 0.12, pal, t);
   } else if (kind === 3) {
     // A ringed planet low in the sky, then twinkling stars with a slow parallax drift.
     const px = Math.round(wrap(330 - t * 0.04, W + 200)) - 60;
