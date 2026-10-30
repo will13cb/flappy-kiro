@@ -22,10 +22,14 @@ jobs:
           set -eu
           # Default: https://<owner>.github.io/<repo>/ (scheduled runs carry no repository payload).
           SITE_URL="${SITE_URL:-https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/}"
+          # GitHub Pages 301-redirects to the custom domain set on the owner's user site
+          # (currently https://williamcaronbastarache.com/flappy-kiro/). Set the SITE_URL repo
+          # variable to that URL to skip the redirect hop.
           check() {
-            code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 20 --retry 2 --retry-delay 10 "$SITE_URL$1")
-            if [ "$code" != "200" ]; then echo "::error::$SITE_URL$1 returned $code"; exit 1; fi
-            echo "ok $code $SITE_URL$1"
+            out=$(curl -sS -L --max-redirs 5 -o /tmp/body -w '%{http_code} %{url_effective}' --max-time 20 --retry 2 --retry-delay 10 "$SITE_URL$1")
+            code=${out%% *}; final=${out#* }
+            if [ "$code" != "200" ]; then echo "::error::$SITE_URL$1 returned $code (final URL: $final)"; exit 1; fi
+            echo "ok $code $final"
           }
           check ''
           grep -q '<script type="module" src="src/main.js">' /tmp/body || { echo "::error::index.html does not load the game module"; exit 1; }
