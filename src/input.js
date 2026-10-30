@@ -8,6 +8,8 @@ const KEY_MAP = {
   Enter: 'enter',
   ArrowUp: 'up',
   ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
   p: 'pause',
   P: 'pause',
   Escape: 'pause',

@@ -8,7 +8,11 @@ export { DEFAULT_CONFIG };
 // Factors applied to each tunable default. Some values are integers by rule.
 const INTEGER_KEYS = new Set(['SPEED_STEP_INTERVAL']);
 
+// Generated configs keep one long world, so the classic-game properties are not
+// interrupted by world transitions.
+const FIXED = { POINTS_PER_WORLD: 1000000 };
 function tunableArb([group, key]) {
+  if (key in FIXED) return fc.constant(FIXED[key]);
   const def = DEFAULT_CONFIG[group][key];
   const factor = fc.double({ min: 0.5, max: 1.5, noNaN: true, noDefaultInfinity: true });
   return factor.map((f) => {

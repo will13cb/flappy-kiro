@@ -83,7 +83,42 @@ function recordTop(storage, score, list) {
   saveTop(storage, next);
   return next;
 }
+// Best medal ever and the chosen skin, stored as plain strings next to the high score.
+const MEDAL_KEY = "flappyKiro.bestMedal";
+const SKIN_KEY = "flappyKiro.skin";
+function readKey(storage, key) {
+  try {
+    return storage.getItem(key);
+  } catch (e) {
+    return null;
+  }
+}
+function writeKey(storage, key, value) {
+  try {
+    storage.setItem(key, value);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+// isValid(medal) decides what counts as a medal; anything else reads as none (null).
+function loadBestMedal(storage, isValid) {
+  const raw = readKey(storage, MEDAL_KEY);
+  return isValid(raw) ? raw : null;
+}
+// Saves and returns the better of the two medals; storage is touched only when it improves.
+function recordBestMedal(storage, medal, stored, better) {
+  const best = better(stored, medal);
+  if (best !== stored && best !== null) writeKey(storage, MEDAL_KEY, best);
+  return best;
+}
+function loadSkin(storage, isValid) {
+  const raw = readKey(storage, SKIN_KEY);
+  return isValid(raw) ? raw : null;
+}
+const saveSkin = (storage, id) => writeKey(storage, SKIN_KEY, id);
 export {
   KEY as HIGH_SCORE_KEY, TOP_KEY as TOP_SCORES_KEY, TOP_SIZE, parseHighScore, load, save, recordIfHigher,
   parseTopScores, insertScore, loadTop, saveTop, recordTop,
+  MEDAL_KEY, SKIN_KEY, loadBestMedal, recordBestMedal, loadSkin, saveSkin,
 };

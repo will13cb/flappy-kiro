@@ -2,13 +2,15 @@
 // Pure functions on plain objects. MenuState: { selected: 'PLAY' | 'HIGH_SCORES', panelOpen: boolean }
 
 const MENU_BUTTONS = ['PLAY', 'HIGH_SCORES'];
+// Skin selector arrows on the main menu (left and right of the skin name).
+const SKIN_ARROWS = ['SKIN_PREV', 'SKIN_NEXT'];
 
 function initialMenu() {
   return { selected: 'PLAY', panelOpen: false };
 }
 
 function buttonsFor(mode, menu) {
-  if (mode === 'Main_Menu') return menu && menu.panelOpen ? ['BACK'] : MENU_BUTTONS.slice();
+  if (mode === 'Main_Menu') return menu && menu.panelOpen ? ['BACK'] : MENU_BUTTONS.concat(SKIN_ARROWS);
   if (mode === 'Game_Over') return ['RESTART', 'MENU'];
   return [];
 }
@@ -21,7 +23,12 @@ function buttonRect(cfg, name) {
   else if (name === 'BACK') y = u.PANEL_BUTTON_Y;
   else if (name === 'RESTART') y = u.GAME_OVER_BUTTON_Y;
   else if (name === 'MENU') y = u.GAME_OVER_BUTTON_Y + u.BUTTON_HEIGHT + u.BUTTON_GAP;
-  else return null;
+  else if (name === 'SKIN_PREV' || name === 'SKIN_NEXT') {
+    const cx = cfg.world.WIDTH / 2;
+    const s = u.ICON_SIZE;
+    const x = name === 'SKIN_PREV' ? cx - u.SKIN_ARROW_OFFSET - s : cx + u.SKIN_ARROW_OFFSET;
+    return { x, y: u.SKIN_ARROW_Y, w: s, h: s };
+  } else return null;
   return { x: u.BUTTON_X, y, w: u.BUTTON_WIDTH, h: u.BUTTON_HEIGHT };
 }
 

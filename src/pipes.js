@@ -43,7 +43,9 @@ function speedForScore(cfg, score) {
 // Appends a new pair at x = WIDTH and returns the new list.
 function spawnPair(cfg, pairs, rng) {
   const list = pairs || [];
-  const prev = list.length > 0 ? list[list.length - 1].gapCenter : undefined;
+  // Moving (Castle) gaps measure the shift from their base center, not the current slide.
+  const last = list.length > 0 ? list[list.length - 1] : null;
+  const prev = last ? (last.baseCenter === undefined ? last.gapCenter : last.baseCenter) : undefined;
   const pair = {
     x: cfg.world.WIDTH,
     gapCenter: chooseGapCenter(cfg, prev, rng),

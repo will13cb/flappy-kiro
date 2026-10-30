@@ -19,6 +19,7 @@ Plain JavaScript ES modules on an HTML canvas, with no build step and no runtime
 - [Rendering](#rendering)
 - [Assets and fallbacks](#assets-and-fallbacks)
 - [Testing](#testing)
+- [Ghosty's Journey](#ghostys-journey)
 - [Deployment](#deployment)
 - [MCP servers](#mcp-servers)
 - [Contributing](#contributing)
@@ -370,6 +371,24 @@ npx vitest --run tests/props/p13-scoring.test.js   # one file
 
 The core is deterministic (seeded `rng`, explicit `dt`), so tests run the real game logic with no browser and no timers.
 
+## Ghosty's Journey
+
+Every `pointsPerWorld` points (default 5) the run moves to the next world, with a title card, a palette crossfade and 1 s of invincibility:
+
+| World | Twist |
+|---|---|
+| Sky | Classic pipes |
+| Forest | Wind gusts, telegraphed ~1 s ahead by an arrow and streaming leaves |
+| Castle | Gaps slide slowly up and down |
+| Space | Lower gravity and a weaker flap |
+
+After Space the journey loops (LOOP 2, LOOP 3, ...), about 10% faster each time. Each world starts a little faster than the last and ramps up inside the world.
+
+- **Medals** on the game-over panel: Bronze, Silver, Gold and Platinum at 1, 2, 3 and 4 × `pointsPerWorld`.
+- **Skins**, chosen with Left/Right or the arrows on the main menu, unlock with your best medal: Pumpkin (Bronze), Rainbow trail (Silver), Gold (Gold), Starfield (Platinum).
+- **Testing and recording:** `?world=sky|forest|castle|space` starts a round in that world (the score starts at its threshold), and `?pointsPerWorld=2` makes worlds short. Example: `http://localhost:8000/?world=forest&pointsPerWorld=3`.
+
+World logic lives in `src/worlds.js` (table, per-world configs, loops), `src/twists.js` (wind, moving gaps), `src/particles.js`, `src/medals.js`, `src/skins.js` and `src/worldArt.js` (per-world drawing). The spec is in `.kiro/specs/ghostys-journey/`.
 ## Deployment
 
 The game is hosted for free on GitHub Pages. `.github/workflows/deploy.yml` runs on every push to `master`:

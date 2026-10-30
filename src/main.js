@@ -4,10 +4,16 @@
 //   deps.assetDeps optional { createImage, createAudio } passed to loadAssets
 // Sounds have one loading path: assets.loadAssets creates the audio elements (no <audio> tags in index.html).
 // The loop never waits for assets; sprites and sounds appear as they finish loading.
-import { loadConfig } from './config.js';
+import { loadConfig, DEFAULT_CONFIG } from './config.js';
+import { buildWorldConfigs, parseStartWorld } from './worlds.js';
+import { medalFor, betterMedal, isMedal } from './medals.js';
+import { SKINS, isUnlocked } from './skins.js';
 import { clampDt } from './physics.js';
 import { createGame, handleInput, update } from './game.js';
-import { load as loadHighScore, loadTop, recordIfHigher, recordTop } from './scoreStore.js';
+import {
+  load as loadHighScore, loadTop, recordIfHigher, recordTop,
+  loadBestMedal, recordBestMedal, loadSkin, saveSkin,
+} from './scoreStore.js';
 import { createAudioPlayer, soundsFor, musicFor } from './audio.js';
 import { loadAssets } from './assets.js';
 import { attachInput } from './input.js';
@@ -53,9 +59,24 @@ export function startApp(opts) {
     return { error: e, message };
   }
 
+  // Every world config must validate too; otherwise use the defaults (like a bad override).
+  const worldCheck = buildWorldConfigs(cfg);
+  if (worldCheck.errors.length) {
+    worldCheck.errors.forEach((e) => log && log.warn(e));
+    if (log) log.warn('world configs are invalid with these overrides; using default config');
+    cfg = DEFAULT_CONFIG;
+  }
+  const search = win && win.location ? win.location.search : '';
+  const start = parseStartWorld(search);
+  if (start.warning && log) log.warn(start.warning);
+  const skinIds = new Set(SKINS.map((k) => k.id));
   const topScores = loadTop(storage);
   // BEST is the larger of the legacy single score and the top of the list.
-  const state = createGame(cfg, Math.max(loadHighScore(storage), topScores[0] || 0), rng, topScores);
+  const state = createGame(cfg, Math.max(loadHighScore(storage), topScores[0] || 0), rng, topScores, {
+    startWorld: start.index,
+    bestMedal: loadBestMedal(storage, isMedal),
+    skin: loadSkin(storage, (id) => skinIds.has(id)) || 'classic',
+  });
   const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
 
   const assets = { sprite: null, sheet: null };
@@ -106,6 +127,10 @@ export function startApp(opts) {
       } else if (ev.type === 'gameOver') {
         state.highScore = recordIfHigher(storage, ev.score, state.highScore);
         state.topScores = recordTop(storage, ev.score, state.topScores);
+        const medal = medalFor(ev.score, cfg.world.POINTS_PER_WORLD);
+        state.bestMedal = recordBestMedal(storage, medal, state.bestMedal, betterMedal);
+      } else if (ev.type === 'skinChanged') {
+        if (isUnlocked(ev.skin, state.bestMedal)) saveSkin(storage, ev.skin);
       }
     });
   }

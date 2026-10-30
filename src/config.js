@@ -2,7 +2,7 @@
 // Units: px = logical pixels, ms = milliseconds, speeds in px/s, gravity in px/s^2.
 // Y grows downward, so an upward jump velocity is negative.
 const BASE = {
-  world: { WIDTH: 480, HEIGHT: 640, GROUND_HEIGHT: 80 },
+  world: { WIDTH: 480, HEIGHT: 640, GROUND_HEIGHT: 80, POINTS_PER_WORLD: 5 },
   ghost: {
     SPRITE_SIZE: 32, HITBOX_SHAPE: 'circle', HITBOX_RADIUS: 12, X: 120, GRAVITY: 800, JUMP_VELOCITY: -300,
   },
@@ -10,10 +10,22 @@ const BASE = {
     PIPE_WIDTH: 64, CAP_WIDTH: 72, CAP_HEIGHT: 24, GAP_HEIGHT: 140, GAP_MARGIN: 60,
     PIPE_SPACING: 350, MAX_GAP_SHIFT: 160,
   },
-  speed: { INITIAL_SPEED: 120, SPEED_INCREMENT: 10, SPEED_STEP_INTERVAL: 5, MAX_SPEED: 240 },
+  speed: {
+    INITIAL_SPEED: 120, SPEED_INCREMENT: 10, SPEED_STEP_INTERVAL: 5, MAX_SPEED: 240,
+    WORLD_SPEED_SPAN: 30, LOOP_SPEED_FACTOR: 1.1, // per-world ramp and per-loop speed-up (worlds.js)
+  },
   timing: {
     INVINCIBILITY_MS: 1500, CRASH_MS: 500, CRASH_FLASH_MS: 100, BLINK_MS: 100, LOCKOUT_MS: 1000, MAX_FRAME_MS: 50,
+    TITLE_CARD_MS: 1500, WORLD_INVINCIBILITY_MS: 1000,
   },
+  // World twists; 0 disables them. worlds.js sets them per world.
+  twist: {
+    WIND_FORCE: 0, WIND_TELEGRAPH_MS: 1000, WIND_GUST_MS: 1500, WIND_CALM_MS: 2500, WIND_RAMP_MS: 400,
+    GAP_AMPLITUDE: 0, GAP_PERIOD_S: 3,
+  },
+  // Cosmetic effects only: never read by physics or collision.
+  fx: { MAX_PARTICLES: 80, PUFF_COUNT: 5, BURST_COUNT: 24, POPUP_MS: 700, SHAKE_MS: 200, SHAKE_PX: 4 },
+  trail: { LENGTH: 8, SAMPLE_MS: 40 },
   clouds: {
     SPEED_MIN: 10,
     SPEED_MAX: 60,
@@ -27,6 +39,7 @@ const BASE = {
     BUTTON_WIDTH: 200, BUTTON_HEIGHT: 44, BUTTON_GAP: 16,
     MENU_BUTTON_Y: 400, PANEL_BUTTON_Y: 400, GAME_OVER_BUTTON_Y: 400,
     ICON_SIZE: 32, ICON_MARGIN: 16,
+    SKIN_ARROW_Y: 214, SKIN_ARROW_OFFSET: 110, // skin selector arrows, from the centre line
   },
   animation: {
     IDLE_FRAMES: [{ ms: 300, offsetY: 0 }, { ms: 300, offsetY: -1 }],
@@ -110,6 +123,7 @@ const TUNABLE = Object.freeze({
   lockoutMs: ['timing', 'LOCKOUT_MS'],
   cloudSpeedMin: ['clouds', 'SPEED_MIN'],
   cloudSpeedMax: ['clouds', 'SPEED_MAX'],
+  pointsPerWorld: ['world', 'POINTS_PER_WORLD'],
 });
 
 function clone(value) {
@@ -221,14 +235,19 @@ function validateConfig(cfg) {
   if (!(speed.INITIAL_SPEED <= speed.MAX_SPEED)) {
     fail('speed.order', 'INITIAL_SPEED (' + speed.INITIAL_SPEED + ') must be <= MAX_SPEED (' + speed.MAX_SPEED + ')');
   }
+  const twist = c.twist || {};
+  const wind = twist.WIND_FORCE || 0;
+  const amp = twist.GAP_AMPLITUDE || 0;
+  const shift = pipes.MAX_GAP_SHIFT + 2 * amp;
   const limit = pipes.PIPE_SPACING / speed.MAX_SPEED;
-  const fall = Math.sqrt((2 * pipes.MAX_GAP_SHIFT) / ghost.GRAVITY);
+  const fall = Math.sqrt((2 * shift) / (ghost.GRAVITY - wind)); // an up-gust slows the fall
   if (!(fall < limit)) {
     fail('reach.fall', 'fall time (' + fall + ' s) must be < PIPE_SPACING / MAX_SPEED (' + limit + ' s)');
   }
   const jumpSpeed = -ghost.JUMP_VELOCITY;
-  const rise = (jumpSpeed * jumpSpeed) / (2 * ghost.GRAVITY);
-  const climb = Math.ceil(pipes.MAX_GAP_SHIFT / rise) * (jumpSpeed / ghost.GRAVITY);
+  const climbG = ghost.GRAVITY + wind; // a down-gust shortens every rise
+  const rise = (jumpSpeed * jumpSpeed) / (2 * climbG);
+  const climb = Math.ceil(shift / rise) * (jumpSpeed / climbG);
   if (!(climb < limit)) {
     fail('reach.climb', 'climb time (' + climb + ' s) must be < PIPE_SPACING / MAX_SPEED (' + limit + ' s)');
   }
@@ -248,7 +267,32 @@ function validateConfig(cfg) {
   if (!(anim.DEATH_TOTAL_MS <= timing.CRASH_MS)) {
     fail('anim.deathFitsCrash', 'DEATH_TOTAL_MS (' + anim.DEATH_TOTAL_MS + ') must be <= CRASH_MS (' + timing.CRASH_MS + ')');
   }
+  if (!(Number.isInteger(world.POINTS_PER_WORLD) && world.POINTS_PER_WORLD >= 1)) {
+    fail('world.pointsPerWorld', 'POINTS_PER_WORLD (' + world.POINTS_PER_WORLD + ') must be an integer >= 1');
+  }
+  if (!(wind >= 0 && wind < ghost.GRAVITY / 2)) {
+    fail('twist.windVsGravity', 'WIND_FORCE (' + wind + ') must be >= 0 and < GRAVITY / 2 (' + ghost.GRAVITY / 2 + ')');
+  }
+  if (!(amp >= 0 && 2 * amp <= pipes.GAP_CENTER_MAX - pipes.GAP_CENTER_MIN)) {
+    fail('twist.amplitudeFits', 'GAP_AMPLITUDE (' + amp + ') must be >= 0 and fit twice in the gap center range');
+  }
+  const gapSpeed = (amp * 2 * Math.PI) / (twist.GAP_PERIOD_S || 1);
+  if (!(twist.GAP_PERIOD_S > 0 && gapSpeed <= jumpSpeed / 2)) {
+    fail('twist.gapFollow', 'peak gap speed (' + gapSpeed + ' px/s) must be <= half the jump speed (' + jumpSpeed / 2 + ')');
+  }
+  if (!(speed.WORLD_SPEED_SPAN > 0 && speed.LOOP_SPEED_FACTOR >= 1)) {
+    fail('speed.span', 'WORLD_SPEED_SPAN must be > 0 and LOOP_SPEED_FACTOR >= 1');
+  }
   return { valid: errors.length === 0, errors };
+}
+
+// A copy of cfg with patch ({ group: { KEY: value } }) applied and derived values recomputed.
+function mergeConfig(cfg, patch) {
+  const base = clone(cfg);
+  Object.keys(patch).forEach((g) => Object.assign(base[g], patch[g]));
+  const derived = derive(base);
+  Object.keys(derived).forEach((g) => Object.assign(base[g], derived[g]));
+  return deepFreeze(base);
 }
 function assertValidConfig(cfg) {
   const result = validateConfig(cfg);
@@ -268,6 +312,8 @@ function parseOverrides(search) {
   const warnings = [];
   const params = new URLSearchParams(search || '');
   params.forEach((value, name) => {
+    // The world param selects the start world and is parsed elsewhere, so it is not unknown.
+    if (name === 'world') return;
     if (!Object.prototype.hasOwnProperty.call(TUNABLE, name)) {
       warnings.push('unknown parameter "' + name + '"');
       return;
@@ -298,4 +344,4 @@ function loadConfig(search, log) {
   return DEFAULT_CONFIG;
 }
 
-export { parseOverrides, loadConfig, derive, TUNABLE, buildConfig, validateConfig, assertValidConfig, DEFAULT_CONFIG };
+export { parseOverrides, loadConfig, derive, mergeConfig, TUNABLE, buildConfig, validateConfig, assertValidConfig, DEFAULT_CONFIG };

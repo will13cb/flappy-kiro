@@ -9,8 +9,9 @@ const TILT_FULL_SPEED = 600;
 const TILT_EPSILON = 1e-9;
 
 // Semi-implicit Euler: velocity first, then position with the new velocity.
-function stepGhost(cfg, ghost, dt) {
-  const vy = ghost.vy + cfg.ghost.GRAVITY * dt;
+// windAccel (px/s^2, + is down) is the Forest gust force; 0 elsewhere.
+function stepGhost(cfg, ghost, dt, windAccel = 0) {
+  const vy = ghost.vy + (cfg.ghost.GRAVITY + windAccel) * dt;
   return { y: ghost.y + vy * dt, vy };
 }
 
