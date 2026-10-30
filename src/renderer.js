@@ -308,6 +308,7 @@ function drawMainMenu(ctx, state) {
   drawButton(ctx, cfg, 'PLAY', menu.selected === 'PLAY');
   drawButton(ctx, cfg, 'HIGH_SCORES', menu.selected === 'HIGH_SCORES');
   drawText(ctx, 'Press SPACE or tap to play', cx, MENU_HINT_Y, HINT_SIZE, 'center');
+  drawText(ctx, 'M: mute   P: pause', cx, MENU_HINT_Y + 20, 8, 'center');
 }
 
 function drawPaused(ctx, state) {

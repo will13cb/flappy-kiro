@@ -40,7 +40,7 @@ function iconRect(cfg, name) {
 }
 
 function iconsVisible(mode) {
-  return mode === 'Playing' || mode === 'Paused';
+  return mode === 'Main_Menu' || mode === 'Playing' || mode === 'Paused';
 }
 
 // Half-open: left and top edges are inside, right and bottom edges are outside.

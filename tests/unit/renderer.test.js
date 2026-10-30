@@ -162,7 +162,7 @@ describe('score and icons', () => {
       expect(rects.some(([x, y]) => x > mute.x && x < mute.x + mute.w && y >= mute.y && y < mute.y + mute.h)).toBe(true);
       expect(rects.some(([x, y]) => x > pause.x && x < pause.x + pause.w && y >= pause.y && y < pause.y + pause.h)).toBe(true);
     }
-    for (const mode of ['Main_Menu', 'Game_Over']) {
+    for (const mode of ['Game_Over']) {
       const ctx = makeCtx();
       renderer.drawUi(ctx, state(mode, { crashMs: 0 }), {}, {});
       const m = calls(ctx, 'fillRect').filter((e) => e.props.globalAlpha === 0.6);

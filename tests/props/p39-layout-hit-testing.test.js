@@ -85,10 +85,10 @@ describe('Property 39: layout and hit testing', () => {
     );
   });
 
-  it('shows icons only in Playing and Paused, never in Main_Menu', () => {
+  it('shows icons in Main_Menu, Playing and Paused, never in Game_Over', () => {
     expect(iconsVisible('Playing')).toBe(true);
     expect(iconsVisible('Paused')).toBe(true);
-    expect(iconsVisible('Main_Menu')).toBe(false);
+    expect(iconsVisible('Main_Menu')).toBe(true);
     expect(iconsVisible('Game_Over')).toBe(false);
   });
 
@@ -100,7 +100,6 @@ describe('Property 39: layout and hit testing', () => {
         expect(hits.length).toBeLessThanOrEqual(1);
         const result = hitTest(cfg, { mode, menu }, x, y);
         expect(result).toBe(hits.length ? hits[0].name : null);
-        if (mode === 'Main_Menu') expect(['MUTE', 'PAUSE']).not.toContain(result);
       }),
       { numRuns: 20 }
     );

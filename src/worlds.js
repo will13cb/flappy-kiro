@@ -4,13 +4,16 @@ import { mergeConfig, validateConfig } from './config.js';
 
 // Overlays scale the base (URL-overridden) values, so ?gravity= etc. still apply in every world.
 // Only physics, speed and twist values change; pipe geometry is identical everywhere.
+// gapShiftScale narrows how far consecutive gaps may jump, so the stronger twists stay reachable.
 const WORLDS = [
-  { id: 'sky', title: 'THE SKY', gravityScale: 1, jumpScale: 1, speedScale: 1, twist: {} },
-  { id: 'forest', title: 'THE FOREST', gravityScale: 1, jumpScale: 1, speedScale: 1.08,
-    twist: { WIND_FORCE: 120 } },
-  { id: 'castle', title: 'THE CASTLE', gravityScale: 1, jumpScale: 1, speedScale: 1.17,
-    twist: { GAP_AMPLITUDE: 24 } },
-  { id: 'space', title: 'SPACE', gravityScale: 0.65, jumpScale: 0.8, speedScale: 1.25, twist: {} },
+  { id: 'sky', title: 'THE SKY', gravityScale: 1, jumpScale: 1, speedScale: 1, gapShiftScale: 1, twist: {} },
+  { id: 'forest', title: 'THE FOREST', gravityScale: 1, jumpScale: 1, speedScale: 1.08, gapShiftScale: 1,
+    twist: { WIND_FORCE: 300 } },
+  { id: 'castle', title: 'THE CASTLE', gravityScale: 1, jumpScale: 1, speedScale: 1.17, gapShiftScale: 0.6,
+    twist: { GAP_AMPLITUDE: 50, GAP_PERIOD_S: 2.5 } },
+  // Floaty: half gravity and a 75% flap give a higher, longer arc (about 63 px, 1.1 s).
+  { id: 'space', title: 'SPACE', gravityScale: 0.5, jumpScale: 0.75, speedScale: 1.25, gapShiftScale: 0.7,
+    twist: {} },
 ];
 const MAX_LOOPS = 20; // search bound for the fastest loop that still validates
 
@@ -56,6 +59,7 @@ function worldConfig(base, kind, loop) {
       GRAVITY: base.ghost.GRAVITY * w.gravityScale,
       JUMP_VELOCITY: base.ghost.JUMP_VELOCITY * w.jumpScale,
     },
+    pipes: { MAX_GAP_SHIFT: base.pipes.MAX_GAP_SHIFT * w.gapShiftScale },
     speed: { INITIAL_SPEED: initial, SPEED_STEP_INTERVAL: 1, MAX_SPEED: initial + sp.WORLD_SPEED_SPAN },
     twist: w.twist,
   });

@@ -166,6 +166,8 @@ function handleInput(state, input, deps) {
     if (kind === 'pointer') {
       const hit = menu.hitTest(state.cfg, state, input.x, input.y);
       if (hit === 'SKIN_PREV' || hit === 'SKIN_NEXT') return changeSkin(state, hit === 'SKIN_PREV' ? -1 : 1);
+      if (hit === 'MUTE') return [{ type: 'toggleMute' }];
+      if (hit === 'PAUSE') return none; // nothing to pause yet; the icon is shown so players know it exists
       if (hit === 'PLAY' || hit === 'HIGH_SCORES' || hit === 'BACK') {
         if (hit === 'PLAY' || hit === 'HIGH_SCORES') state.menu = Object.assign({}, state.menu, { selected: hit });
         return activateName(hit);
