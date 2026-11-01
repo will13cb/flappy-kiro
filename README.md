@@ -3,6 +3,7 @@
 A Flappy Bird style browser game starring Ghosty, the Kiro ghost. Flap through the walls, score a point for each pair you pass, and travel through four worlds, each with its own look, music and twist.
 
 **Play it live: https://williamcaronbastarache.com/flappy-kiro/**
+**Watch the demo: https://youtu.be/_9Qb0pobL5M**
 
 | Main menu | Forest world |
 |---|---|
